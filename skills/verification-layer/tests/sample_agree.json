@@ -1,0 +1,5 @@
+[
+ {"source":"jake","role":"primary","symbol":"TEST","asset_class":"equity","as_of":"2026-11-26T15:00","direction":"long","entry":100,"stop":95,"targets":[112],"horizon_days":10,"confidence":72,"method":"اختراق قمة ٢٠ يومًا","evidence":[{"claim":"إغلاق فوق قمة ٢٠ يومًا","certainty":"مؤكد"},{"claim":"حجم أعلى من المتوسط","certainty":"مؤكد"}]},
+ {"source":"tradermonty","role":"secondary","symbol":"TEST","asset_class":"equity","as_of":"2026-11-26T15:00","direction":"long","entry":101,"stop":96,"targets":[114],"horizon_days":12,"confidence":68,"method":"VCP","evidence":[{"claim":"انكماش التذبذب ثلاث مرات","certainty":"استنتاج"},{"claim":"السوق في اتجاه صاعد","certainty":"منقول"}]},
+ {"source":"lens:minervini-vcp","role":"lens","symbol":"TEST","asset_class":"equity","as_of":"2026-11-26T15:00","direction":"long","horizon_days":20,"confidence":70,"evidence":[{"claim":"المرحلة الثانية","certainty":"استنتاج"},{"claim":"قوة نسبية عالية","certainty":"استنتاج"}]}
+]

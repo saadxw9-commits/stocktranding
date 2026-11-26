@@ -1,0 +1,28 @@
+# طبقة مصادر البيانات. تغيير المصدر يتم هنا فقط.
+equity:
+  prices: tradingview-mcp        # tradingview-mcp | tradingview-official | yfinance
+  technicals: tradingview-mcp
+  screener: tradingview-mcp
+  news: [jake-news, tradingview-mcp]
+  filings: sec-edgar             # عبر أدوات Jake
+  fundamentals: fmp              # مطلوب لمعظم مهارات tradermonty؛ الخطة المجانية ٢٥٠ طلبًا يوميًا
+crypto:                          # جاهز للتفعيل لاحقًا
+  enabled: false
+  prices: tradingview-mcp
+fx:
+  enabled: false
+  prices: tradingview-mcp
+
+providers:
+  tradingview-mcp:
+    official: false
+    note: بيانات غير رسمية وقد تتأخر؛ تكفي للتداول الورقي
+  tradingview-official:
+    official: true
+    enabled: false               # يُفعَّل بعد الاشتراك (خطة Essential فما فوق)
+    url: https://mcp.tradingview.com/mcp
+  yfinance:
+    official: false
+    role: احتياطي
+  fmp:
+    env: FMP_API_KEY

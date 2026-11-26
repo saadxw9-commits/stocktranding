@@ -1,0 +1,54 @@
+# عدسات investorskills المستخدمة في محلل السهم. المسار نسبةً إلى vendor/investorskills/skills/
+swing_momentum:        # صفقات أيام وأسابيع
+  - minervini-vcp
+  - oneil-canslim
+  - darvas-box
+  - livermore
+  - seykota-systematic-trend
+  - turtle-trading
+  - ptj-macro-trend
+growth_quality:
+  - lynch-growth
+  - coleman-tiger-growth
+  - hohn-concentrated-quality
+  - cathie-wood-innovation
+value:
+  - buffett
+  - munger
+  - graham-net-net
+  - klarman-deep-value
+  - schloss-cigar-butt
+  - templeton-max-pessimism
+  - greenblatt-special-situations
+macro_cycle:
+  - druckenmiller
+  - soros-reflexivity
+  - dalio-principles-allweather
+  - marks-cycles
+  - tepper-distressed-macro
+red_flags:             # تُستدعى دائمًا للتحقق من المخاطر الخفية
+  - muddy-waters-forensic
+  - hindenburg-investigation
+  - einhorn-forensic-short
+  - spruce-point-accounting-short
+  - burry-asymmetric-contrarian
+quant:
+  - simons-quant
+crypto:                # محجوزة لمرحلة العملات
+  - hsaka-crypto-ta
+  - cryptocred-structure
+  - arthur-hayes-liquidity
+  - willy-woo-onchain
+  - cobie-cycle-filter
+  - delphi-thematic-crypto
+  - grayscale-crypto-sectors
+  - paradigm-crypto-research
+  - multicoin-thesis-vc
+  - a16z-crypto
+  - ansem-crypto
+excluded:              # خارج نطاق الأسهم الأمريكية حاليًا (رأس مال جريء، سوق صينية، سندات)
+  reason: لا تنطبق على صفقات الأسهم الأمريكية
+  skills: [a16z-techno-optimist, sequoia-founder-market, founders-fund-contrarian, yc-early-pmf, usv-network-effects, placeholder-token-networks, chenhao-limit-up, dengxiaofeng-cycle-industry, duanyongping-benfen-value, fengliu-reverse-weakhand, qiuguolu-value-quality, danbin-longterm-compounder, libei-macro-hedge, shihanbing-macro-interest-analysis, tangnengtong-shortterm-ta, zhanglei-longterm-research-value, li-lu-value, nick-sleep-scale-economies, gundlach-bonds, watsa-insurance-float, icahn-activist, ackman-concentrated-activism, serenity]
+default_per_analysis:  # ما يُستدعى افتراضيًا لكل سهم
+  swing: [minervini-vcp, oneil-canslim]
+  always: [muddy-waters-forensic]

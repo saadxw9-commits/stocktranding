@@ -1,0 +1,17 @@
+# المهارات المسجّلة في Claude Code.
+# حزمتا Jake تُسجَّلان كإضافتين كاملتين عبر .claude/settings.json (تتحدثان تلقائيًا مع المستودع الأصلي).
+# مهارات tradermonty تُربط بروابط رمزية من vendor/tradermonty/skills إلى .claude/skills/
+# لإضافة مهارة: أضف اسمها هنا ثم شغّل: python3 scripts/link_skills.py
+tradermonty:
+  market_regime: [market-breadth-analyzer, uptrend-analyzer, market-top-detector, ftd-detector, macro-regime-detector, market-environment-analysis, market-news-analyst, exposure-coach, sector-analyst, ibd-distribution-day-monitor]
+  swing: [vcp-screener, canslim-screener, breakout-trade-planner, theme-detector, stockbee-momentum-burst-screener, finviz-screener]
+  planning: [position-sizer, drawdown-circuit-breaker, pre-trade-discipline-gate, technical-analyst, us-stock-analysis, contrarian-setup-gate]
+  events: [earnings-calendar, economic-calendar-fetcher, earnings-trade-analyzer, pead-screener, institutional-flow-tracker]
+  memory: [trader-memory-core, signal-postmortem, weekly-performance-digest, trade-performance-coach]
+  research: [scenario-analyzer, backtest-expert, data-quality-checker, trading-skills-navigator]
+  crypto_reserved: [crypto-regime-analyzer]   # لا تُربط حتى تفعيل العملات
+ours: [market-watch, opportunity-scan, stock-analyst, risk-guard, verification-layer, journal]
+# مستودع Anthropic للخدمات المالية: إضافة equity-research مفعّلة كاملة عبر .claude/settings.json.
+# من financial-analysis نربط مهارات المنهج فقط، دون الإضافة نفسها، لأنها تطلب ١٢ خادم بيانات مؤسسيًا مدفوعًا.
+anthropic_fs:
+  financial-analysis: [comps-analysis, dcf-model, competitive-analysis]

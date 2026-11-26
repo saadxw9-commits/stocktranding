@@ -1,0 +1,8 @@
+db/journal.sqlite
+__pycache__/
+*.pyc
+.env
+workspaces/*/trader/*
+!workspaces/*/trader/config.json
+reports/**/*.json
+!reports/.gitkeep

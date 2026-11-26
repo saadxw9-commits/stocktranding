@@ -1,0 +1,35 @@
+{
+  "extraKnownMarketplaces": {
+    "trader-skill": {
+      "source": {
+        "source": "directory",
+        "path": "./vendor/jake-trader"
+      }
+    },
+    "day-trader-skill": {
+      "source": {
+        "source": "directory",
+        "path": "./vendor/jake-day-trader"
+      }
+    },
+    "claude-for-financial-services": {
+      "source": {
+        "source": "directory",
+        "path": "./vendor/anthropic-fs"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "trader-skill@trader-skill": true,
+    "day-trader-skill@day-trader-skill": true,
+    "equity-research@claude-for-financial-services": true
+  },
+  "permissions": {
+    "deny": [
+      "Skill(trader-skill:trader-broker)",
+      "Skill(day-trader-skill:trader-broker)",
+      "Edit(vendor/**)",
+      "Write(vendor/**)"
+    ]
+  }
+}

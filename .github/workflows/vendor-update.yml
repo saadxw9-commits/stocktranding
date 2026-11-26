@@ -1,0 +1,43 @@
+name: تحديث المستودعات الخارجية
+
+on:
+  schedule:
+    - cron: "17 2 * * 6"   # كل سبت ٥:١٧ صباحًا بتوقيت الرياض
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pyyaml
+      - name: جلب آخر التحديثات
+        run: git submodule update --remote --init vendor/*
+      - name: فحص التحديثات
+        id: guard
+        run: python3 scripts/vendor_guard.py | tee guard.txt
+      - name: اختبار طبقة التحقق
+        run: python3 -m unittest discover -s skills/verification-layer/tests -q
+      - name: اعتماد التحديث
+        run: |
+          python3 scripts/link_skills.py
+          git config user.name "vendor-bot"
+          git config user.email "vendor-bot@users.noreply.github.com"
+          git add vendor .claude/skills
+          git diff --cached --quiet || { git commit -m "تحديث المستودعات الخارجية بعد الفحص"; git push; }
+      - name: فتح بلاغ عند الإيقاف
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --title "أُوقف تحديث المستودعات الخارجية" --body-file guard.txt || true

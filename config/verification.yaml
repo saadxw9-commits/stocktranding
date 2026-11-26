@@ -1,0 +1,17 @@
+# عتبات طبقة التحقق
+levels_gap_pct:          # الفرق في مستويات الدخول والوقف والهدف
+  small: 2.0             # أقل من ٢٪ صغير
+  large: 6.0             # من ٦٪ فأكثر كبير، وبينهما متوسط
+confidence_gap_points:
+  small: 10
+  large: 25
+horizon_ratio_explains: 3.0   # إذا كان أفق أحد الرأيين ثلاثة أضعاف الآخر، فالفرق في المستويات مبرَّر
+min_evidence_items: 2         # أقل من ذلك يُعد الرأي ضعيف الأدلة
+weights:                      # أوزان الآراء عند حساب الثقة الموحدة
+  primary: 0.5
+  secondary: 0.3
+  lens: 0.2
+divergence_penalty:           # خصم من الثقة الموحدة حسب حجم التفاوت
+  small: 0
+  medium: 8
+  large: 20

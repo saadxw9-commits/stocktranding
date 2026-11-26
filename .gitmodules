@@ -1,0 +1,30 @@
+[submodule "vendor/jake-trader"]
+	path = vendor/jake-trader
+	url = https://github.com/Jakeschincariol/trader-skill.git
+	branch = main
+	ignore = untracked
+[submodule "vendor/jake-day-trader"]
+	path = vendor/jake-day-trader
+	url = https://github.com/Jakeschincariol/day-trader-skill.git
+	branch = main
+	ignore = untracked
+[submodule "vendor/tradermonty"]
+	path = vendor/tradermonty
+	url = https://github.com/tradermonty/claude-trading-skills.git
+	branch = main
+	ignore = untracked
+[submodule "vendor/tradingview-mcp"]
+	path = vendor/tradingview-mcp
+	url = https://github.com/atilaahmettaner/tradingview-mcp.git
+	branch = main
+	ignore = untracked
+[submodule "vendor/investorskills"]
+	path = vendor/investorskills
+	url = https://github.com/questflowai/investorskills.git
+	branch = main
+	ignore = untracked
+[submodule "vendor/anthropic-fs"]
+	path = vendor/anthropic-fs
+	url = https://github.com/anthropics/financial-services.git
+	branch = main
+	ignore = untracked

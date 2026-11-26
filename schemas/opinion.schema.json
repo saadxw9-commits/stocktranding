@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "رأي مصدر واحد حول أصل واحد",
+  "type": "object",
+  "required": ["source", "role", "symbol", "asset_class", "as_of", "direction", "horizon_days", "confidence"],
+  "properties": {
+    "source": { "type": "string", "description": "مثال: jake, tradermonty, lens:minervini-vcp" },
+    "role": { "enum": ["primary", "secondary", "lens"] },
+    "symbol": { "type": "string" },
+    "asset_class": { "enum": ["equity", "crypto", "fx"] },
+    "as_of": { "type": "string", "description": "تاريخ ووقت الرأي بصيغة ISO" },
+    "direction": { "enum": ["long", "short", "neutral", "avoid"] },
+    "entry": { "type": ["number", "null"] },
+    "stop": { "type": ["number", "null"] },
+    "targets": { "type": "array", "items": { "type": "number" } },
+    "horizon_days": { "type": "integer", "minimum": 0, "description": "٠ للصفقة اليومية" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 100 },
+    "method": { "type": "string", "description": "المنهج أو الإعداد: اختراق، ارتداد، CAN SLIM..." },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claim", "certainty"],
+        "properties": {
+          "claim": { "type": "string" },
+          "certainty": { "enum": ["مؤكد", "منقول", "استنتاج", "فرضية", "تكهن"] },
+          "source_url": { "type": "string" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}

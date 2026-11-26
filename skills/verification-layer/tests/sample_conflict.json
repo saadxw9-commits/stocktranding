@@ -1,0 +1,4 @@
+[
+ {"source":"jake","role":"primary","symbol":"TEST","asset_class":"equity","as_of":"2026-11-26T15:00","direction":"long","entry":100,"stop":95,"targets":[112],"horizon_days":10,"confidence":72,"evidence":[{"claim":"a","certainty":"مؤكد"},{"claim":"b","certainty":"مؤكد"}]},
+ {"source":"tradermonty","role":"secondary","symbol":"TEST","asset_class":"equity","as_of":"2026-11-26T15:00","direction":"short","entry":99,"stop":104,"targets":[90],"horizon_days":10,"confidence":60,"evidence":[{"claim":"a","certainty":"مؤكد"},{"claim":"b","certainty":"مؤكد"}]}
+]
