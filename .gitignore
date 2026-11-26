@@ -6,3 +6,6 @@ workspaces/*/trader/*
 !workspaces/*/trader/config.json
 reports/**/*.json
 !reports/.gitkeep
+
+# مولَّد بـ scripts/link_skills.py
+.claude/skills/

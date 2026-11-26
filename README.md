@@ -15,6 +15,18 @@ export FMP_API_KEY="مفتاحك المجاني"
 claude
 ```
 
+**على ويندوز (PowerShell):**
+
+```powershell
+git clone --recurse-submodules https://github.com/saadxw9-commits/stocktranding.git
+cd stocktranding
+$env:SEC_USER_AGENT = "اسمك بريدك"
+$env:FMP_API_KEY = "مفتاحك المجاني"
+.\scripts\setup.ps1
+```
+
+مجلد `.claude/skills` مولَّد ولا يُرفع إلى git. على ويندوز يُنشأ بنسخ حقيقية، فأعد تشغيل `python scripts/link_skills.py` بعد كل تحديث للمستودعات الخارجية. إذا نقص أي مستودع خارجي عندك: `git submodule update --init`.
+
 ## المكونات
 
 - **الأساسي:** حزمتا Jake (`trader-skill` و`day-trader-skill`).
