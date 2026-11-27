@@ -18,12 +18,29 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import math
 from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[2]
+def _find_root() -> Path:
+    """جذر المستودع: أول مجلد أعلى يحوي config/risk-rules.yaml. يعمل من skills/ ومن النسخ في .claude/skills/."""
+    here = Path(__file__).resolve()
+    for p in here.parents:
+        if (p / "config" / "risk-rules.yaml").exists():
+            return p
+    return here.parents[2]
+
+
+ROOT = _find_root()
+
+def _utf8_console() -> None:
+    """طرفية ويندوز قد تكون بترميز cp1252 عند تحويل المخرجات؛ النص العربي يحتاج UTF-8."""
+    for s in (sys.stdout, sys.stderr):
+        if hasattr(s, "reconfigure"):
+            s.reconfigure(encoding="utf-8")
+
 
 
 def load_config(path=None):
@@ -104,6 +121,7 @@ LEVELS = {"large": "فجوة كبيرة", "watch": "تستحق المتابعة"
 
 
 def main():
+    _utf8_console()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("snapshot", type=Path)
     ap.add_argument("--out", type=Path)

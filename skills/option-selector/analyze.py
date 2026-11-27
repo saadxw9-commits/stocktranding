@@ -34,7 +34,23 @@ def option_value(spot, strike, side, years, iv, rate, dividend):
                    - strike * math.exp(-rate * years) * normal.cdf(sign * (d1 - vol)))
 
 
-ROOT = Path(__file__).resolve().parents[2]
+def _find_root() -> Path:
+    """جذر المستودع: أول مجلد أعلى يحوي config/risk-rules.yaml. يعمل من skills/ ومن النسخ في .claude/skills/."""
+    here = Path(__file__).resolve()
+    for p in here.parents:
+        if (p / "config" / "risk-rules.yaml").exists():
+            return p
+    return here.parents[2]
+
+
+ROOT = _find_root()
+
+def _utf8_console() -> None:
+    """طرفية ويندوز قد تكون بترميز cp1252 عند تحويل المخرجات؛ النص العربي يحتاج UTF-8."""
+    for s in (sys.stdout, sys.stderr):
+        if hasattr(s, "reconfigure"):
+            s.reconfigure(encoding="utf-8")
+
 YEAR = 365 * 86400
 
 
@@ -231,13 +247,14 @@ def compare(data, rules, now, universe=None):
 
 
 def main():
+    _utf8_console()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("snapshot", type=Path)
     parser.add_argument("--replay", action="store_true", help="evaluate at snapshot time, paper only")
     parser.add_argument("--journal", action="store_true", help="record every evaluated contract in the shadow log")
     parser.add_argument("--fees", type=float, default=None, help="fees per contract for the shadow log")
     args = parser.parse_args()
-    root = Path.cwd()
+    root = ROOT
     try:
         rules = yaml.safe_load((root / "config/risk-rules.yaml").read_text(encoding="utf-8"))
         data = json.loads(args.snapshot.read_text(encoding="utf-8"))

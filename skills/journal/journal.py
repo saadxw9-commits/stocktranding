@@ -23,7 +23,23 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+def _find_root() -> Path:
+    """جذر المستودع: أول مجلد أعلى يحوي config/risk-rules.yaml. يعمل من skills/ ومن النسخ في .claude/skills/."""
+    here = Path(__file__).resolve()
+    for p in here.parents:
+        if (p / "config" / "risk-rules.yaml").exists():
+            return p
+    return here.parents[2]
+
+
+ROOT = _find_root()
+
+def _utf8_console() -> None:
+    """طرفية ويندوز قد تكون بترميز cp1252 عند تحويل المخرجات؛ النص العربي يحتاج UTF-8."""
+    for s in (sys.stdout, sys.stderr):
+        if hasattr(s, "reconfigure"):
+            s.reconfigure(encoding="utf-8")
+
 DB = ROOT / "db" / "journal.sqlite"
 
 
@@ -209,6 +225,7 @@ def cmd_stats(a):
 
 
 def main() -> int:
+    _utf8_console()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sp = ap.add_subparsers(dest="cmd", required=True)
     sp.add_parser("init").set_defaults(f=cmd_init)

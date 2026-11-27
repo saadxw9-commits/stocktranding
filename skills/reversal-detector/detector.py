@@ -28,7 +28,23 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from statistics import median
 
-ROOT = Path(__file__).resolve().parents[2]
+def _find_root() -> Path:
+    """جذر المستودع: أول مجلد أعلى يحوي config/risk-rules.yaml. يعمل من skills/ ومن النسخ في .claude/skills/."""
+    here = Path(__file__).resolve()
+    for p in here.parents:
+        if (p / "config" / "risk-rules.yaml").exists():
+            return p
+    return here.parents[2]
+
+
+ROOT = _find_root()
+
+def _utf8_console() -> None:
+    """طرفية ويندوز قد تكون بترميز cp1252 عند تحويل المخرجات؛ النص العربي يحتاج UTF-8."""
+    for s in (sys.stdout, sys.stderr):
+        if hasattr(s, "reconfigure"):
+            s.reconfigure(encoding="utf-8")
+
 sys.path.insert(0, str(ROOT / "skills" / "option-selector"))
 from analyze import option_value, stamp  # noqa: E402
 
@@ -456,6 +472,7 @@ def to_journal(report: dict, mode: str, contract_mode: str = "standard"):
 
 
 def main():
+    _utf8_console()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("bars", type=Path)
     ap.add_argument("--out", type=Path)

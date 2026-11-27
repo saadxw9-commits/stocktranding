@@ -14,8 +14,8 @@ from analyze import compare, load_universe, stamp
 
 class ContractTest(unittest.TestCase):
     def setUp(self):
-        self.data = json.loads((SKILL / "example.json").read_text())
-        self.rules = yaml.safe_load((SKILL.parents[1] / "config/risk-rules.yaml").read_text())
+        self.data = json.loads((SKILL / "example.json").read_text(encoding="utf-8"))
+        self.rules = yaml.safe_load((SKILL.parents[1] / "config/risk-rules.yaml").read_text(encoding="utf-8"))
         self.now = stamp(self.data["as_of"])
 
     def run_case(self):
@@ -72,8 +72,8 @@ class UniverseTest(unittest.TestCase):
     """قواعد الأصول من config/options-universe.yaml."""
 
     def setUp(self):
-        self.base = json.loads((SKILL / "example.json").read_text())
-        self.rules = yaml.safe_load((SKILL.parents[1] / "config/risk-rules.yaml").read_text())
+        self.base = json.loads((SKILL / "example.json").read_text(encoding="utf-8"))
+        self.rules = yaml.safe_load((SKILL.parents[1] / "config/risk-rules.yaml").read_text(encoding="utf-8"))
         self.rules.update(capital_usd=100000)
         self.now = stamp(self.base["as_of"])
 

@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from journal import conn  # noqa: E402
+from journal import _utf8_console, conn  # noqa: E402
 
 DDL = """
 CREATE TABLE IF NOT EXISTS option_decisions (
@@ -207,6 +207,7 @@ def print_stats(s: dict):
 
 
 def main():
+    _utf8_console()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sp = ap.add_subparsers(dest="cmd", required=True)
     p = sp.add_parser("add"); p.add_argument("report", type=Path); p.add_argument("--fees", type=float, default=0.0)

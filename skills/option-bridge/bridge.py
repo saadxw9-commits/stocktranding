@@ -23,7 +23,23 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[2]
+def _find_root() -> Path:
+    """جذر المستودع: أول مجلد أعلى يحوي config/risk-rules.yaml. يعمل من skills/ ومن النسخ في .claude/skills/."""
+    here = Path(__file__).resolve()
+    for p in here.parents:
+        if (p / "config" / "risk-rules.yaml").exists():
+            return p
+    return here.parents[2]
+
+
+ROOT = _find_root()
+
+def _utf8_console() -> None:
+    """طرفية ويندوز قد تكون بترميز cp1252 عند تحويل المخرجات؛ النص العربي يحتاج UTF-8."""
+    for s in (sys.stdout, sys.stderr):
+        if hasattr(s, "reconfigure"):
+            s.reconfigure(encoding="utf-8")
+
 sys.path.insert(0, str(ROOT / "skills" / "option-selector"))
 from analyze import compare, load_universe, resolve, stamp  # noqa: E402
 
@@ -170,7 +186,13 @@ RIGHT = {"call": "شراء Call", "put": "شراء Put"}
 
 def describe(r: dict) -> list[str]:
     if "contract" not in r:
-        return [f"القرار: انتظر ({r.get('reason')})"]
+        lines = [f"القرار: انتظر ({r.get('reason')})"]
+        for x in r.get("expiries", []):
+            why = x.get("reason") or ""
+            rej = {k: v for k, v in (x.get("rejected") or {}).items() if v}
+            detail = "، ".join(f"{k:g}: {'+'.join(v) if isinstance(v, list) else v}" for k, v in rej.items())
+            lines.append(f"  {x['expiry']} ({x['dte']} يومًا): {why}" + (f" — {detail}" if detail else ""))
+        return lines
     c = r["contract"]
     lines = [f"القرار: {r['decision']} — {RIGHT[r['side']]} على {r['underlying']}، انتهاء {r['expiry']}، سعر التنفيذ {c['strike']}",
              f"سعر الشراء {c['ask']} (أقصى خسارة {c['max_loss_usd']}$)، الحساسية {c['delta']} ({c['moneyness']})، الفارق {c['spread_pct']}%",
@@ -185,6 +207,7 @@ def describe(r: dict) -> list[str]:
 
 
 def main():
+    _utf8_console()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     a1 = sub.add_parser("plan")
@@ -214,6 +237,8 @@ def main():
                         a.cash, a.budget, a.fees, a.mode, stamp(chain["as_of"]) if a.replay else None, sig)
         if a.replay:
             result["mode_run"] = "historical_simulation"
+            if result.get("decision") == "CANDIDATE":
+                result["decision"] = "PAPER_CANDIDATE"
         print("\n".join(describe(result)))
         if a.journal:
             sys.path.insert(0, str(ROOT / "skills" / "journal"))

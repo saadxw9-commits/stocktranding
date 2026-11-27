@@ -18,7 +18,23 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[2]
+def _find_root() -> Path:
+    """جذر المستودع: أول مجلد أعلى يحوي config/risk-rules.yaml. يعمل من skills/ ومن النسخ في .claude/skills/."""
+    here = Path(__file__).resolve()
+    for p in here.parents:
+        if (p / "config" / "risk-rules.yaml").exists():
+            return p
+    return here.parents[2]
+
+
+ROOT = _find_root()
+
+def _utf8_console() -> None:
+    """طرفية ويندوز قد تكون بترميز cp1252 عند تحويل المخرجات؛ النص العربي يحتاج UTF-8."""
+    for s in (sys.stdout, sys.stderr):
+        if hasattr(s, "reconfigure"):
+            s.reconfigure(encoding="utf-8")
+
 SEVERITY_ORDER = {"مقبول": 0, "يحتاج مراجعة": 1, "خطير": 2}
 SIZE_ORDER = {"صغير": 0, "متوسط": 1, "كبير": 2}
 BULLISH = {"long": 1, "neutral": 0, "avoid": -1, "short": -1}
@@ -291,6 +307,7 @@ def report_ar(r: dict) -> str:
 
 
 def main() -> int:
+    _utf8_console()
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("file")
     ap.add_argument("--json", action="store_true")

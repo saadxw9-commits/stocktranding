@@ -26,8 +26,8 @@ jobs:
       - name: فحص التحديثات
         id: guard
         run: python3 scripts/vendor_guard.py | tee guard.txt
-      - name: اختبار طبقة التحقق
-        run: python3 -m unittest discover -s skills/verification-layer/tests -q
+      - name: اختبار مهاراتنا
+        run: for t in skills/*/tests; do python3 -m unittest discover -s "$t" -q || exit 1; done
       - name: اعتماد التحديث
         run: |
           git config user.name "vendor-bot"

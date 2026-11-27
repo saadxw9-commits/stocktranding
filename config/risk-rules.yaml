@@ -3,7 +3,7 @@ capital_usd: 7000             # رأس المال الفعلي (حدّثه ال�
 cash_buffer_pct: 20            # نسبة نقد لا تُستثمر
 max_position_pct: 25           # أقصى وزن لسهم واحد
 max_positions: 5               # أقصى عدد مراكز مفتوحة
-max_loss_per_trade_pct: 2      # أقصى خسارة للصفقة من رأس المال (٢٠ دولارًا)
+max_loss_per_trade_pct: 2      # أقصى خسارة لصفقة الأسهم من رأس المال (١٤٠ دولارًا عند ٧٠٠٠)
 max_weekly_loss_pct: 6         # يتوقف الاقتراح بقية الأسبوع إذا تجاوزه
 min_reward_risk: 2.0           # أقل نسبة عائد إلى مخاطرة
 min_confidence_to_suggest: 65  # لا يُعرض اقتراح دخول أقل من هذه الثقة
