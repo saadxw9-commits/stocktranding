@@ -44,6 +44,16 @@ class BridgeTest(unittest.TestCase):
         self.assertIn(r["expiry"], ("2026-12-31", "2027-01-15"))
         self.assertLessEqual(r["contract"]["max_loss_usd"], 3000)
 
+    def test_reward_risk_with_early_stop(self):
+        # بشرط الضعفين: هدف 432 لا يكفي لتغطية تآكل العقد، وهدف أبعد يكفي
+        self.rules["min_reward_risk"] = 2.0
+        self.assertEqual(self.run_select()["decision"], "WAIT")
+        pl = plan(self.ver, self.u)
+        pl["target"] = 470
+        r = self.run_select(pl=pl)
+        self.assertEqual(r["decision"], "CANDIDATE")
+        self.assertGreaterEqual(r["contract"]["reward_risk"], 2.0)
+
     def test_budget_blocks(self):
         r = self.run_select(budget=500)
         self.assertEqual(r["decision"], "WAIT")

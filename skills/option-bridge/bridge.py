@@ -174,7 +174,7 @@ def describe(r: dict) -> list[str]:
     lines = [f"القرار: {r['decision']} — {RIGHT[r['side']]} على {r['underlying']}، انتهاء {r['expiry']}، سعر التنفيذ {c['strike']}",
              f"سعر الشراء {c['ask']} (أقصى خسارة {c['max_loss_usd']}$)، الحساسية {c['delta']} ({c['moneyness']})، الفارق {c['spread_pct']}%",
              f"عند الهدف {c['pnl_usd']['target']:+}$ | عند الثبات {c['pnl_usd']['flat']:+}$ | عند الإلغاء {c['pnl_usd']['stop']:+}$ "
-             f"(تقدير بتذبذب ثابت حتى {r['exit_at']})"]
+             f"(تقدير بتذبذب ثابت: الهدف والثبات عند الخروج {r['exit_at']}، والإلغاء بعد يومي تداول من الدخول)"]
     if r.get("must_close_by"):
         lines.append(f"أغلق العقد قبل {r['must_close_by']} (تسوية بتسليم الأسهم)")
     for x in r["expiries"]:

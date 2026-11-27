@@ -9,7 +9,7 @@ import yaml
 
 SKILL = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SKILL))
-from analyze import compare, stamp
+from analyze import compare, load_universe, stamp
 
 
 class ContractTest(unittest.TestCase):
@@ -165,3 +165,16 @@ class UniverseTest(unittest.TestCase):
         r = self.run_case(d)
         self.assertEqual(r["max_spread_pct"], 12)
         self.assertNotIn("wide_spread", r["contracts"][0]["rejected"])
+
+    def test_swing_stop_valued_early(self):
+        d = self.etf("SPY", spot=600, target=640, invalidation=585, horizon="swing",
+                     exit_at="2026-12-11T15:30:00-05:00", last_trade_at="2027-01-15T16:00:00-05:00",
+                     settlement_at="2027-01-15T16:00:00-05:00")
+        d["quotes"][0].update(bid=20.0, ask=20.3, iv=0.2)
+        r = self.run_case(d)
+        self.assertEqual(r["stop_scenario_at"], "2026-12-01T10:45:00-05:00")   # يوما تداول بعد الجمعة
+        early = r["contracts"][0]["pnl_usd"]["stop"]
+        u = load_universe()
+        u["defaults"]["swing_expiry"]["stop_scenario_days"] = 30
+        late = compare(d, self.rules, self.now, u)["contracts"][0]["pnl_usd"]["stop"]
+        self.assertGreater(early, late)

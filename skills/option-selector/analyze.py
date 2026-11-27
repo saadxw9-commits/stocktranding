@@ -49,6 +49,15 @@ def resolve(universe, name):
     raise ValueError(f"underlying {name} not in config/options-universe.yaml")
 
 
+def add_trading_days(dt, n):
+    """يضيف أيام تداول بتخطي السبت والأحد (العطل الرسمية غير محسوبة)."""
+    while n > 0:
+        dt += timedelta(days=1)
+        if dt.weekday() < 5:
+            n -= 1
+    return dt
+
+
 def option_delta(spot, strike, side, years, iv, rate, dividend):
     if years <= 0 or iv <= 0:
         return float(side == "call" and spot > strike) - float(side == "put" and spot < strike)
@@ -118,6 +127,11 @@ def compare(data, rules, now, universe=None):
     mult = u["multiplier"]
     years = (settlement - exit_at).total_seconds() / YEAR
     years_now = (settlement - as_of).total_seconds() / YEAR
+    # الإلغاء يُضرب غالبًا مبكرًا: في صفقات الأيام والأسابيع يُقيَّم بعد stop_scenario_days من أيام التداول
+    stop_at = exit_at
+    if horizon == "swing":
+        stop_at = min(add_trading_days(as_of, u.get("swing_expiry", {}).get("stop_scenario_days", 2)), exit_at)
+    years_stop = (settlement - stop_at).total_seconds() / YEAR
     rate = number(data["rate"], -1)
     dividend = number(data["dividend_yield"])
     fees = number(data["fees_per_contract_usd"])
@@ -127,7 +141,7 @@ def compare(data, rules, now, universe=None):
                  capital * number(rules["options_max_premium_pct"]) / 100)
     if cheap is not None:
         budget = min(budget, number(cheap["max_premium_usd"]))
-    report.update(budget_usd=budget, exit_at=exit_at.isoformat(),
+    report.update(budget_usd=budget, exit_at=exit_at.isoformat(), stop_scenario_at=stop_at.isoformat(),
                   valuation=("model_constant_iv" if years else "settlement")
                   + ("_american_approx" if u["exercise"] == "american" and years else ""))
     lo_d, hi_d = cheap["delta_band"] if cheap is not None else u["delta_band"]
@@ -155,9 +169,9 @@ def compare(data, rules, now, universe=None):
             continue
         iv = number(q["iv"], 0.000001)
         pnl = {}
-        for label, level in (("target", target), ("flat", spot), ("stop", stop)):
-            value = option_value(level, strike, side, years, iv if years else 0,
-                                 rate if years else 0, dividend if years else 0)
+        for label, level, yrs in (("target", target, years), ("flat", spot, years), ("stop", stop, years_stop)):
+            value = option_value(level, strike, side, yrs, iv if yrs else 0,
+                                 rate if yrs else 0, dividend if yrs else 0)
             pnl[label] = round((value - ask) * mult - fees, 2)
         cost = round(ask * mult + fees, 2)
         ratio = pnl["target"] / -pnl["stop"] if pnl["stop"] < 0 else None
