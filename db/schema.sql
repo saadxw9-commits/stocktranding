@@ -73,3 +73,21 @@ CREATE TABLE IF NOT EXISTS executions (
 CREATE INDEX IF NOT EXISTS idx_opinions_symbol ON opinions(symbol, created_at);
 CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions(status);
 CREATE INDEX IF NOT EXISTS idx_executions_symbol ON executions(symbol);
+
+-- إشارات الارتداد اللحظي على المؤشرات (skills/reversal-detector): صفقة محاكاة أو ورقية أو فعلية لكل إشارة
+CREATE TABLE IF NOT EXISTS intraday_signals (
+    id                  INTEGER PRIMARY KEY,
+    created_at          TEXT NOT NULL,      -- وقت الدخول
+    symbol              TEXT NOT NULL,
+    asset_class         TEXT NOT NULL DEFAULT 'index',
+    side                TEXT NOT NULL,      -- call / put
+    zone                TEXT,
+    entry               REAL NOT NULL,
+    result_pts          REAL,
+    result_r            REAL,
+    option_pnl_usd_est  REAL,
+    closed_at           TEXT,
+    mode                TEXT NOT NULL,      -- replay / paper / live
+    payload_json        TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_intraday_mode ON intraday_signals(mode, created_at);

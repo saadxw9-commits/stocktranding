@@ -57,3 +57,11 @@ $env:FMP_API_KEY = "مفتاحك المجاني"
 ```bash
 python skills/option-selector/analyze.py skills/option-selector/example.json --replay
 ```
+
+## كاشف الارتداد اللحظي
+
+[المهارة](skills/reversal-detector/SKILL.md) تقرأ شموع SPX بأي دقة (ثانية أو دقيقة) وتطلق تنبيه المنطقة ثم إشارة الدخول وقواعد الخروج. لإعادة عرض يوم 27 نوفمبر 2026 (بيانات تقريبية من لقطات):
+
+```bash
+python skills/reversal-detector/detector.py skills/reversal-detector/fixtures/spx-2026-11-27-approx.json
+```
