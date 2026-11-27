@@ -119,7 +119,7 @@ def select(pl: dict, chain: dict, rules: dict, universe: dict, cash: float, budg
     spot = chain["spot"]
     state = entry_state(pl, spot)
     report = dict(underlying=pl["underlying"], side=pl["side"], spot=spot, as_of=chain["as_of"],
-                  exit_at=pl["exit_at"], status=pl["status"], mode=mode, expiries=[])
+                  exit_at=pl["exit_at"], status=pl["status"], mode=mode, horizon=pl["horizon"], expiries=[])
     if state:
         return dict(report, decision="WAIT", reason=state)
     w = pl["expiry_window"]
@@ -151,8 +151,9 @@ def select(pl: dict, chain: dict, rules: dict, universe: dict, cash: float, budg
             best = next(c for c in r["contracts"] if c.get("strike") == strike and c.get("right") == pl["side"])
         report["expiries"].append(dict(row, decision=r["decision"], reason=r.get("reason"),
                                        must_close_by=r.get("must_close_by"), warnings=r.get("warnings"),
-                                       best=best, rejected={c["strike"]: c.get("rejected") or c.get("reason")
-                                                            for c in r["contracts"]}))
+                                       best=best, contracts=r["contracts"],
+                                       rejected={c["strike"]: c.get("rejected") or c.get("reason")
+                                                 for c in r["contracts"]}))
     cands = [x for x in report["expiries"] if x.get("best")]
     if not cands:
         return dict(report, decision="WAIT", reason="no_eligible_contract")
@@ -198,6 +199,7 @@ def main():
     a2.add_argument("--mode", default="standard", choices=["standard", "cheap"])
     a2.add_argument("--signal", type=Path, help="إشارة مؤكدة (مطلوبة لنمط العقود الرخيصة)")
     a2.add_argument("--replay", action="store_true", help="تقييم في وقت اللقطة، ورقي فقط")
+    a2.add_argument("--journal", action="store_true", help="سجّل كل عقد قُيّم في سجل الظل")
     a2.add_argument("--out", type=Path)
     a = ap.parse_args()
     universe = load_universe()
@@ -213,6 +215,10 @@ def main():
         if a.replay:
             result["mode_run"] = "historical_simulation"
         print("\n".join(describe(result)))
+        if a.journal:
+            sys.path.insert(0, str(ROOT / "skills" / "journal"))
+            from shadow import add
+            print(f"سجل الظل: {add(result, a.fees)} عقد")
     if a.out:
         a.out.parent.mkdir(parents=True, exist_ok=True)
         a.out.write_text(json.dumps(result, ensure_ascii=False, indent=2, default=str), encoding="utf-8")

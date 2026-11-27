@@ -93,3 +93,29 @@ CREATE TABLE IF NOT EXISTS intraday_signals (
     payload_json        TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_intraday_mode ON intraday_signals(mode, created_at);
+
+-- سجل الظل لعقود الخيارات (skills/journal/shadow.py): كل عقد قُيّم، مقبولًا أو مرفوضًا، ونتيجته بعد الخروج
+CREATE TABLE IF NOT EXISTS option_decisions (
+    id              INTEGER PRIMARY KEY,
+    created_at      TEXT NOT NULL,
+    contract_key    TEXT NOT NULL,          -- الأصل|الانتهاء|السعر|النوع
+    underlying      TEXT NOT NULL,
+    expiry          TEXT NOT NULL,
+    strike          REAL NOT NULL,
+    right_          TEXT NOT NULL,
+    mode            TEXT NOT NULL,          -- standard / cheap
+    horizon         TEXT NOT NULL,
+    ask             REAL NOT NULL,
+    delta           REAL,
+    status          TEXT NOT NULL,          -- eligible / rejected
+    reasons         TEXT NOT NULL DEFAULT '',
+    selected        INTEGER NOT NULL DEFAULT 0,
+    exit_at         TEXT NOT NULL,
+    fees            REAL NOT NULL DEFAULT 0,
+    exit_price      REAL,
+    pnl_usd         REAL,
+    return_pct      REAL,
+    resolved_at     TEXT,
+    UNIQUE(created_at, contract_key, mode, exit_at)
+);
+CREATE INDEX IF NOT EXISTS idx_option_decisions_open ON option_decisions(resolved_at, exit_at);

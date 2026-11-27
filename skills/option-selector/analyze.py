@@ -2,6 +2,7 @@
 import argparse
 import json
 import math
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from statistics import NormalDist
@@ -80,7 +81,7 @@ def compare(data, rules, now, universe=None):
     physical = u["settlement"] == "physical"
     report = {"decision": "WAIT", "underlying": key, "series": data.get("series", key), "source": data["source"],
               "as_of": as_of.isoformat(), "horizon": horizon, "settlement": u["settlement"],
-              "exercise": u["exercise"], "contracts": [], "warnings": []}
+              "exercise": u["exercise"], "expiry": settlement.date().isoformat(), "contracts": [], "warnings": []}
     if horizon not in u["horizons"]:
         return dict(report, reason="horizon_not_allowed", allowed=u["horizons"])
     if as_of >= last_trade or now >= last_trade:
@@ -233,6 +234,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("snapshot", type=Path)
     parser.add_argument("--replay", action="store_true", help="evaluate at snapshot time, paper only")
+    parser.add_argument("--journal", action="store_true", help="record every evaluated contract in the shadow log")
+    parser.add_argument("--fees", type=float, default=None, help="fees per contract for the shadow log")
     args = parser.parse_args()
     root = Path.cwd()
     try:
@@ -247,6 +250,11 @@ def main():
     except (ValueError, KeyError, TypeError, AttributeError, OSError, OverflowError) as exc:
         result = dict(decision="WAIT", reason=f"input_error: {exc}")
     print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False))
+    if args.journal and result.get("contracts"):
+        sys.path.insert(0, str(ROOT / "skills" / "journal"))
+        from shadow import add
+        fees = args.fees if args.fees is not None else data.get("fees_per_contract_usd", 0)
+        print(f"سجل الظل: {add(result, fees)} عقد")
 
 
 if __name__ == "__main__":
