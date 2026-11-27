@@ -3,8 +3,11 @@
 
 1. خريطة المناطق: مستويات ثابتة (قمة وقاع وإغلاق اليوم السابق، الجلسة الليلية، الأرقام المستديرة)
    ومستوى متحرك (قاع أو قمة الجلسة السابق)، مع تقدير سعر العقد عند كل مستوى.
-2. إشارة الدخول: نطاق ضيق، ثم كسر لطرفه بحجم مرتفع قرب منطقة، ثم إغلاق خلف الطرف الآخر.
-   الكسر لأسفل ثم الاستعادة = صعود (Call). الكسر لأعلى ثم الرجوع = هبوط (Put).
+2. إشارة الدخول بنمطين:
+   - الكسر الكاذب: نطاق ضيق، ثم كسر لطرفه بحجم مرتفع قرب منطقة، ثم إغلاق خلف الطرف الآخر.
+   - القاع الأعلى: عودة إلى قاع الجلسة السابق دون كسره، في نطاق ضيق، ثم إغلاق فوق النطاق
+     (والعكس للقمة الأدنى).
+   الصعود = Call، والهبوط = Put.
 3. قواعد الخروج: إلغاء خلف طرف الكسر، هدفان من المناطق، بيع جزئي عند الأول ونقل الإلغاء
    إلى سعر الدخول، ووقف زمني وخروج قبل الإغلاق.
 4. السجل: كل منطقة وإشارة وخروج تُكتب في JSON، وتُضاف الصفقات إلى سجل المنظومة عند --journal.
@@ -36,7 +39,9 @@ DEFAULTS = {
     "volume_ratio": 1.2,           # حجم شمعة الكسر ÷ متوسط حجم النطاق (يُتجاهل إن غاب الحجم)
     "zone_tolerance_pts": 4.0,     # قرب طرف الكسر من منطقة
     "zone_required": True,
-    "alert_cooldown_seconds": 600,  # لا يتكرر تنبيه المنطقة في الاتجاه نفسه قبل هذه المدة
+    "alert_cooldown_seconds": 600,
+    "retest_min_age_seconds": 600,  # عمر القاع (أو القمة) السابق قبل أن يُعد اختباره قاعًا أعلى
+    "signal_cooldown_seconds": 600,  # لا يتكرر تنبيه المنطقة في الاتجاه نفسه قبل هذه المدة
     "round_step": 25,
     "round_span_pts": 150,
     "stop_buffer_pts": 1.0,
@@ -103,6 +108,7 @@ class Detector:
         self.used_sweeps: set[int] = set()
         self.alerted: set[tuple] = set()
         self.last_alert: dict[str, datetime] = {}
+        self.last_signal: dict[tuple, datetime] = {}
         self.static = self._static_levels()
 
     # ---------- الطبقة ١: المناطق ----------
@@ -192,12 +198,50 @@ class Detector:
                                reason="volume" if not vol_ok else "no_zone")
                     continue
                 self.used_sweeps.add(i)
-                self.pending = dict(side=side, sweep_at=sweep["t"], signal_at=now, extreme=extreme,
+                self.pending = dict(side=side, pattern="failed_breakdown" if side == "call" else "failed_breakout",
+                                    sweep_at=sweep["t"], signal_at=now, extreme=extreme,
                                     range_low=r_lo, range_high=r_hi,
                                     zone=zone[1] if zone else None, zone_level=zone[0] if zone else None,
                                     sweep_volume=sweep.get("v"))
                 self._emit("signal", now, **{k: v for k, v in self.pending.items() if k != "signal_at"})
                 return
+        self._check_retest()
+
+    def _check_retest(self):
+        """قاع أعلى (أو قمة أدنى): اختبار طرف الجلسة السابق دون كسره، ثم إغلاق خارج النطاق الضيق."""
+        cfg = self.cfg
+        bar = self.bars[-1]
+        now = bar["t"]
+        win = [b for b in self.bars[:-1] if b["t"] >= now - timedelta(seconds=cfg["range_seconds"])]
+        if len(win) < cfg["min_range_bars"]:
+            return
+        prior = [b for b in self.bars if b["t"] < win[0]["t"]]
+        if len(prior) < cfg["min_range_bars"]:
+            return
+        w_lo, w_hi = min(b["l"] for b in win), max(b["h"] for b in win)
+        if w_hi - w_lo > cfg["max_range_pts"]:
+            return
+        tol, age = cfg["zone_tolerance_pts"], cfg["retest_min_age_seconds"]
+        lo_bar, hi_bar = min(prior, key=lambda b: b["l"]), max(prior, key=lambda b: b["h"])
+        cases = (
+            ("call", "higher_low", "قاع الجلسة السابق", lo_bar["l"], w_lo,
+             lo_bar["l"] < w_lo <= lo_bar["l"] + tol and bar["l"] > lo_bar["l"]
+             and (now - lo_bar["t"]).total_seconds() >= age and bar["c"] > w_hi),
+            ("put", "lower_high", "قمة الجلسة السابقة", hi_bar["h"], w_hi,
+             hi_bar["h"] > w_hi >= hi_bar["h"] - tol and bar["h"] < hi_bar["h"]
+             and (now - hi_bar["t"]).total_seconds() >= age and bar["c"] < w_lo),
+        )
+        for side, pattern, zone, level, extreme, ok in cases:
+            if not ok:
+                continue
+            last = self.last_signal.get((pattern, side))
+            if last and (now - last).total_seconds() < cfg["signal_cooldown_seconds"]:
+                continue
+            self.last_signal[(pattern, side)] = now
+            self.pending = dict(side=side, pattern=pattern, sweep_at=None, signal_at=now, extreme=extreme,
+                                range_low=w_lo, range_high=w_hi, zone=zone, zone_level=level, sweep_volume=None)
+            self._emit("signal", now, **{k: v for k, v in self.pending.items() if k != "signal_at"})
+            return
 
     # ---------- الطبقة ٣: الدخول والخروج ----------
     def _targets(self, side, entry, risk):
@@ -225,7 +269,7 @@ class Detector:
                        self.close_at - timedelta(seconds=self.cfg["flat_before_close_seconds"]))
         info = dict(side=side, entry=entry, stop=stop, risk_pts=round(risk, 2),
                     t1=t1, t1_zone=n1, t2=t2, t2_zone=n2, planned_r=round(planned, 2),
-                    deadline=deadline, zone=p["zone"],
+                    deadline=deadline, zone=p["zone"], pattern=p["pattern"],
                     option_entry_est=self.option.price(entry, bar["t"]),
                     option_stop_est=self.option.price(stop, bar["t"]))
         if planned < self.cfg["min_reward_risk"]:
@@ -274,7 +318,7 @@ class Detector:
         self._emit("trade_closed", pos["fills"][-1]["at"], side=pos["side"], entry=pos["entry"],
                    result_pts=round(pts, 2), result_r=round(pts / pos["risk_pts"], 2),
                    option_pnl_usd_est=opt, fills=pos["fills"], planned_r=pos["planned_r"],
-                   zone=pos["zone"], opened_at=pos["opened_at"])
+                   zone=pos["zone"], pattern=pos["pattern"], opened_at=pos["opened_at"])
 
     # ---------- الواجهة ----------
     def _emit(self, kind, t, **data):
@@ -315,6 +359,7 @@ def run(data: dict, cfg: dict | None = None) -> dict:
     events = det.finish()
     trades = [e for e in events if e["type"] == "trade_closed"]
     return dict(source=data.get("source"), symbol=data.get("symbol", "SPX"),
+                asset_class=data.get("asset_class", "index"),
                 bar_seconds=bar_seconds(data["bars"]), config=det.cfg,
                 option_iv=det.option.iv if det.option.spec else None,
                 events=events, summary=dict(
@@ -335,6 +380,10 @@ def describe(e) -> str:
         opt = f" — العقد تقديريًا {e['option_est']}$" if e.get("option_est") is not None else ""
         return f"{t} منطقة: {e['zone']} عند {e['level']:.2f} (احتمال {SIDES[e['side']]}){opt}"
     if k == "signal":
+        if e.get("sweep_at") is None:
+            word = "قاع أعلى" if e["side"] == "call" else "قمة أدنى"
+            return (f"{t} إشارة {SIDES[e['side']]}: {word} عند {e['extreme']:.2f} فوق {e['zone']} "
+                    f"{e['zone_level']:.2f}، ثم إغلاق خارج النطاق {e['range_low']:.2f}–{e['range_high']:.2f}")
         return (f"{t} إشارة {SIDES[e['side']]}: كسر النطاق {e['range_low']:.2f}–{e['range_high']:.2f} "
                 f"إلى {e['extreme']:.2f} ثم استعادة، قرب {e['zone'] or 'بلا منطقة'}")
     if k == "rejected_signal":
@@ -356,18 +405,24 @@ def describe(e) -> str:
     return f"{t} {k}"
 
 
-def to_journal(report: dict, mode: str):
+def to_journal(report: dict, mode: str, contract_mode: str = "standard"):
     sys.path.insert(0, str(ROOT / "skills" / "journal"))
     from journal import conn
     c = conn()
+    cols = {r[1] for r in c.execute("PRAGMA table_info(intraday_signals)")}
+    for col, ddl in (("pattern", "TEXT"), ("contract_mode", "TEXT NOT NULL DEFAULT 'standard'")):
+        if col not in cols:
+            c.execute(f"ALTER TABLE intraday_signals ADD COLUMN {col} {ddl}")
     n = 0
     for e in report["events"]:
         if e["type"] != "trade_closed":
             continue
         c.execute("INSERT INTO intraday_signals(created_at,symbol,asset_class,side,zone,entry,result_pts,result_r,"
-                  "option_pnl_usd_est,closed_at,mode,payload_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-                  (e["opened_at"].isoformat(), report["symbol"], "index", e["side"], e["zone"], e["entry"],
-                   e["result_pts"], e["result_r"], e["option_pnl_usd_est"], e["at"].isoformat(), mode,
+                  "option_pnl_usd_est,closed_at,mode,pattern,contract_mode,payload_json) "
+                  "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                  (e["opened_at"].isoformat(), report["symbol"], report.get("asset_class", "index"), e["side"],
+                   e["zone"], e["entry"], e["result_pts"], e["result_r"], e["option_pnl_usd_est"],
+                   e["at"].isoformat(), mode, e.get("pattern"), contract_mode,
                    json.dumps(e, ensure_ascii=False, default=str)))
         n += 1
     c.commit()
@@ -381,6 +436,8 @@ def main():
     ap.add_argument("--out", type=Path)
     ap.add_argument("--journal", action="store_true", help="أضف الصفقات المحاكاة إلى سجل المنظومة")
     ap.add_argument("--mode", default="replay", choices=["replay", "paper", "live"])
+    ap.add_argument("--contract-mode", default="standard", choices=["standard", "cheap"],
+                    help="نوع العقود المرتبطة بالإشارات، لتُقاس كل فئة في السجل منفصلة")
     a = ap.parse_args()
     report = run(json.loads(a.bars.read_text(encoding="utf-8")))
     report["mode"] = a.mode
@@ -393,7 +450,7 @@ def main():
         a.out.parent.mkdir(parents=True, exist_ok=True)
         a.out.write_text(json.dumps(report, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     if a.journal:
-        print(f"أُضيفت {to_journal(report, a.mode)} صفقة إلى السجل")
+        print(f"أُضيفت {to_journal(report, a.mode, a.contract_mode)} صفقة إلى السجل")
 
 
 if __name__ == "__main__":

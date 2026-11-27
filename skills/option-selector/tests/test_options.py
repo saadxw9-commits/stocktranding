@@ -95,7 +95,7 @@ class UniverseTest(unittest.TestCase):
         r = self.run_case(self.etf())
         self.assertEqual(r["decision"], "CANDIDATE")
         self.assertEqual(r["settlement"], "physical")
-        self.assertEqual(r["must_close_by"], "2026-11-27T12:30:00-05:00")
+        self.assertEqual(r["must_close_by"], "2026-11-27T12:50:00-05:00")
         self.assertEqual(r["contracts"][0]["moneyness"], "atm")
 
     def test_physical_hold_to_expiry_refused(self):
@@ -137,3 +137,20 @@ class UniverseTest(unittest.TestCase):
         r = self.run_case(d)
         self.assertEqual(r["scaled_levels"]["spot"], 722.6)
         self.assertEqual(r["contracts"][0]["max_loss_usd"], 95)
+
+    def test_cheap_mode(self):
+        # عقد QQQ 645 عند إشارة 10:07 في 27 نوفمبر (أرقام تقديرية)
+        d = self.etf(spot=639, target=650, invalidation=636.5, exit_at="2026-11-27T12:50:00-05:00")
+        d["quotes"] = [dict(strike=645, right="call", bid=0.42, ask=0.47, iv=0.5, open_interest=4290,
+                            volume=20000, quoted_at=d["as_of"])]
+        std = self.run_case(d)
+        self.assertIn("delta_outside_band", std["contracts"][0]["rejected"])
+        d["mode"] = "cheap"
+        self.assertEqual(self.run_case(d)["reason"], "cheap_mode_requires_signal")
+        d["signal"] = {"pattern": "higher_low", "at": "2026-11-27T10:06:00-05:00"}
+        r = self.run_case(d)
+        self.assertEqual(r["decision"], "CANDIDATE")
+        self.assertEqual(r["budget_usd"], 100)
+        self.assertGreaterEqual(r["contracts"][0]["payoff_multiple"], 3)
+        d["target"] = 646
+        self.assertIn("cheap_payoff", self.run_case(d)["contracts"][0]["rejected"])

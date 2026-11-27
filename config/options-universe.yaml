@@ -7,8 +7,15 @@ defaults:
   max_iv_rank: 70                   # فوقها يُعد العقد غاليًا مقارنة بتاريخه (0–100)
   min_open_interest: 500
   min_volume: 100
-  close_before_expiry_minutes: 30   # عقود التسليم الفعلي تُغلق قبل آخر تداول بهذه المدة
+  close_before_expiry_minutes: 10   # عقود التسليم الفعلي تُغلق قبل آخر تداول بهذه المدة (خُفضت من 30 في 28 نوفمبر)
   earnings_check: false
+  # نمط العقود الرخيصة: عقود بعيدة عن السعر، العلاوة كلها هي الإلغاء. يُفعَّل بـ "mode": "cheap" في اللقطة.
+  cheap_mode:
+    delta_band: [0.05, 0.20]
+    max_premium_usd: 100            # أقصى علاوة للصفقة الواحدة شاملة الرسوم
+    min_payoff_multiple: 3          # ربح العقد عند الهدف ÷ علاوته
+    max_spread_pct: 15              # فوارق العقود الرخيصة أوسع نسبيًا
+    requires_signal: true           # لا دخول إلا بإشارة مؤكدة من reversal-detector
 
 underlyings:
   SPX:

@@ -88,6 +88,8 @@ CREATE TABLE IF NOT EXISTS intraday_signals (
     option_pnl_usd_est  REAL,
     closed_at           TEXT,
     mode                TEXT NOT NULL,      -- replay / paper / live
+    pattern             TEXT,               -- failed_breakdown / failed_breakout / higher_low / lower_high
+    contract_mode       TEXT NOT NULL DEFAULT 'standard',   -- standard / cheap
     payload_json        TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_intraday_mode ON intraday_signals(mode, created_at);

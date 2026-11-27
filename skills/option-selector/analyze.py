@@ -100,6 +100,13 @@ def compare(data, rules, now, universe=None):
     elif number(iv_rank) > u["max_iv_rank"]:
         report["iv_rank"] = iv_rank
         return dict(report, reason="iv_expensive_vs_history")
+    mode = data.get("mode", "standard")
+    if mode not in ("standard", "cheap"):
+        raise ValueError("mode must be standard or cheap")
+    cheap = u.get("cheap_mode", {}) if mode == "cheap" else None
+    report["mode"] = mode
+    if cheap is not None and cheap.get("requires_signal", True) and not data.get("signal"):
+        return dict(report, reason="cheap_mode_requires_signal")
     side = data["side"]
     spot, target, stop = [number(data[k], 0.000001) for k in ("spot", "target", "invalidation")]
     if data.get("levels_from") == "SPX" and u.get("scale_from_spx"):
@@ -118,10 +125,13 @@ def compare(data, rules, now, universe=None):
     # علاوة العقد = أقصى خسارة، فحدود الأسهم لا تنطبق. السقف من options_max_premium_pct.
     budget = min(number(data["available_cash_usd"]), number(data["risk_budget_usd"]),
                  capital * number(rules["options_max_premium_pct"]) / 100)
+    if cheap is not None:
+        budget = min(budget, number(cheap["max_premium_usd"]))
     report.update(budget_usd=budget, exit_at=exit_at.isoformat(),
                   valuation=("model_constant_iv" if years else "settlement")
                   + ("_american_approx" if u["exercise"] == "american" and years else ""))
-    lo_d, hi_d = u["delta_band"]
+    lo_d, hi_d = cheap["delta_band"] if cheap is not None else u["delta_band"]
+    max_spread = cheap["max_spread_pct"] if cheap is not None else rules["max_option_spread_pct"]
     strikes = {}
     seen = set()
     for q in data["quotes"]:
@@ -161,7 +171,7 @@ def compare(data, rules, now, universe=None):
         reasons = []
         if cost > budget:
             reasons.append("over_budget")
-        if spread > rules["max_option_spread_pct"]:
+        if spread > max_spread:
             reasons.append("wide_spread")
         oi, vol = q.get("open_interest"), q.get("volume")
         if oi is None or vol is None:
@@ -173,14 +183,19 @@ def compare(data, rules, now, universe=None):
                 reasons.append("low_volume")
         if not lo_d <= abs(delta) <= hi_d:
             reasons.append("delta_outside_band")
-        if ratio is None or ratio < rules["min_reward_risk"]:
+        payoff = round(pnl["target"] / cost, 3) if cost else None
+        if cheap is not None:
+            # العلاوة كلها هي الإلغاء: يُقاس الربح عند الهدف بمضاعف العلاوة
+            if payoff is None or payoff < cheap["min_payoff_multiple"]:
+                reasons.append("cheap_payoff")
+        elif ratio is None or ratio < rules["min_reward_risk"]:
             reasons.append("scenario_reward_risk")
         band = "otm" if abs(delta) < 0.42 else "atm" if abs(delta) <= 0.58 else "itm"
         report["contracts"].append(dict(strike=strike, right=side, ask=ask, bid=bid,
             quoted_at=q["quoted_at"], delta=delta, delta_source=delta_src, moneyness=band, iv=q.get("iv"),
             open_interest=oi, volume=vol,
             max_loss_usd=cost, breakeven=round(strike + (1 if side == "call" else -1) * cost / mult, 4),
-            pnl_usd=pnl, reward_risk=ratio, spread_pct=round(spread, 3), rejected=reasons))
+            pnl_usd=pnl, reward_risk=ratio, payoff_multiple=payoff, spread_pct=round(spread, 3), rejected=reasons))
     if strikes:
         atm = min(strikes, key=lambda k: (abs(k - spot), k))
         pair = strikes[atm]

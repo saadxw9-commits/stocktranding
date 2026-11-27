@@ -69,6 +69,23 @@ class DetectorTest(unittest.TestCase):
         self.assertEqual(entry["side"], "put")
         self.assertGreater(r["summary"]["total_r"], 0)
 
+    def test_higher_low(self):
+        # قاع 4990 ثم صعود ثم عودة إلى 4992–4994 دون كسر القاع، ثم إغلاق فوق النطاق
+        drop = [(5000 - 2 * i, 5001 - 2 * i, 4999 - 2 * i, 4998 - 2 * i, 100) for i in range(5)]
+        low = [(4991, 4992, 4990, 4991.5, 150)]
+        bounce = [(4992 + i, 4994 + i, 4991.5 + i, 4993.5 + i, 100) for i in range(5)]
+        back = [(4996 - i, 4996.5 - i, 4994.5 - i, 4995 - i, 100) for i in range(3)]
+        base = [(4993, 4994.5, 4992.2, 4993.5, 100)] * 60      # عشر دقائق قرب القاع دون كسره
+        go = [(4993.5, 4997, 4993.4, 4996.5, 180)]
+        cfg = {"range_seconds": 60, "reclaim_seconds": 30, "zone_tolerance_pts": 3.0}
+        r = run(ctx(bars_from(drop + low + bounce + back + base + go + RALLY), config=cfg))
+        sig = next(e for e in r["events"] if e["type"] == "signal")
+        self.assertEqual(sig["pattern"], "higher_low")
+        self.assertEqual(sig["zone_level"], 4990)
+        entry = next(e for e in r["events"] if e["type"] == "entry")
+        self.assertEqual(entry["pattern"], "higher_low")
+        self.assertEqual(entry["stop"], round(sig["extreme"] - 1.0, 2))
+
     def test_time_order(self):
         det = Detector(ctx([]))
         b = bars_from(FLAT[:2])
