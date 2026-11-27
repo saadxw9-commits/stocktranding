@@ -2,6 +2,7 @@ import json
 import sys
 import unittest
 from datetime import timedelta
+import copy
 from pathlib import Path
 
 import yaml
@@ -56,8 +57,8 @@ class ContractTest(unittest.TestCase):
         # عقد بعلاوة 831$ يمر برأس مال 1000$ بعد إلغاء حد 2%
         self.data.update(spot=7216, target=7290, invalidation=7205,
                          risk_budget_usd=1000, available_cash_usd=1000)
-        self.data["quotes"] = [dict(strike=7250, right="call", bid=8.2, ask=8.3, iv=0.15,
-                                    quoted_at=self.data["as_of"])]
+        self.data["quotes"] = [dict(strike=7250, right="call", bid=8.2, ask=8.3, iv=0.417,
+                                    open_interest=3000, volume=900, quoted_at=self.data["as_of"])]
         report = self.run_case()
         self.assertEqual(report["budget_usd"], 1000)
         self.assertEqual(report["decision"], "CANDIDATE")
@@ -65,3 +66,74 @@ class ContractTest(unittest.TestCase):
     def test_stale_atm_leg(self):
         self.data["quotes"][2]["quoted_at"] = (self.now - timedelta(minutes=2)).isoformat()
         self.assertNotIn("atm_straddle", self.run_case())
+
+
+class UniverseTest(unittest.TestCase):
+    """قواعد الأصول من config/options-universe.yaml."""
+
+    def setUp(self):
+        self.base = json.loads((SKILL / "example.json").read_text())
+        self.rules = yaml.safe_load((SKILL.parents[1] / "config/risk-rules.yaml").read_text())
+        self.rules.update(capital_usd=100000)
+        self.now = stamp(self.base["as_of"])
+
+    def etf(self, name="QQQ", **kw):
+        d = copy.deepcopy(self.base)
+        d.update(underlying=name, series=name, spot=600, target=607, invalidation=597,
+                 risk_budget_usd=5000, available_cash_usd=5000, horizon="intraday",
+                 last_trade_at="2026-11-27T13:00:00-05:00", settlement_at="2026-11-27T13:00:00-05:00",
+                 exit_at="2026-11-27T12:00:00-05:00", iv_rank=40)
+        d["quotes"] = [dict(strike=600, right="call", bid=2.0, ask=2.04, iv=0.2, open_interest=8000,
+                            volume=3000, quoted_at=d["as_of"])]
+        d.update(kw)
+        return d
+
+    def run_case(self, d):
+        return compare(d, self.rules, self.now)
+
+    def test_qqq_candidate_with_close_cutoff(self):
+        r = self.run_case(self.etf())
+        self.assertEqual(r["decision"], "CANDIDATE")
+        self.assertEqual(r["settlement"], "physical")
+        self.assertEqual(r["must_close_by"], "2026-11-27T12:30:00-05:00")
+        self.assertEqual(r["contracts"][0]["moneyness"], "atm")
+
+    def test_physical_hold_to_expiry_refused(self):
+        r = self.run_case(self.etf(exit_at="2026-11-27T13:00:00-05:00"))
+        self.assertEqual(r["reason"], "physical_settlement_exit_after_cutoff")
+
+    def test_ewz_intraday_refused(self):
+        r = self.run_case(self.etf("EWZ"))
+        self.assertEqual(r["reason"], "horizon_not_allowed")
+
+    def test_unknown_underlying(self):
+        with self.assertRaises(ValueError):
+            self.run_case(self.etf("AAPL"))
+
+    def test_tsla_earnings_window(self):
+        d = self.etf("TSLA", horizon="swing", earnings_date="2026-11-27T11:30:00-05:00")
+        self.assertEqual(self.run_case(d)["reason"], "earnings_in_window")
+        d.pop("earnings_date")
+        self.assertIn("earnings_date_unknown", self.run_case(d)["warnings"])
+
+    def test_iv_expensive(self):
+        self.assertEqual(self.run_case(self.etf(iv_rank=85))["reason"], "iv_expensive_vs_history")
+
+    def test_liquidity_and_delta(self):
+        d = self.etf()
+        d["quotes"][0].update(open_interest=10, volume=5)
+        d["quotes"].append(dict(strike=640, right="call", bid=0.01, ask=0.02, iv=0.2,
+                                open_interest=9000, volume=9000, quoted_at=d["as_of"]))
+        r = self.run_case(d)
+        self.assertIn("low_open_interest", r["contracts"][0]["rejected"])
+        self.assertIn("delta_outside_band", r["contracts"][1]["rejected"])
+
+    def test_xsp_scaled_from_spx(self):
+        d = copy.deepcopy(self.base)
+        d.update(underlying="XSP", series="XSP", levels_from="SPX", spot=7226, target=7250,
+                 invalidation=7210.46, risk_budget_usd=2000, available_cash_usd=2000)
+        d["quotes"] = [dict(strike=725, right="call", bid=0.9, ask=0.95, iv=0.417, open_interest=400,
+                            volume=300, quoted_at=d["as_of"])]
+        r = self.run_case(d)
+        self.assertEqual(r["scaled_levels"]["spot"], 722.6)
+        self.assertEqual(r["contracts"][0]["max_loss_usd"], 95)

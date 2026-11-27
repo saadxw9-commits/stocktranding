@@ -1,0 +1,52 @@
+# أصول عقود الخيارات المعتمدة وقواعد كل منها. يعدّلها المالك فقط.
+# قيم السيولة والحساسية مبدئية؛ تُراجع بعد أول شهر من التسجيل.
+
+defaults:
+  multiplier: 100
+  delta_band: [0.20, 0.80]          # حساسية العقد المقبولة (القيمة المطلقة)
+  max_iv_rank: 70                   # فوقها يُعد العقد غاليًا مقارنة بتاريخه (0–100)
+  min_open_interest: 500
+  min_volume: 100
+  close_before_expiry_minutes: 30   # عقود التسليم الفعلي تُغلق قبل آخر تداول بهذه المدة
+  earnings_check: false
+
+underlyings:
+  SPX:
+    aliases: [SPXW]
+    kind: index
+    settlement: cash
+    exercise: european
+    horizons: [intraday, swing]
+  XSP:
+    kind: index
+    settlement: cash
+    exercise: european
+    horizons: [intraday, swing]
+    scale_from_spx: 0.1             # مستويات SPX ÷ 10
+    min_open_interest: 100
+    min_volume: 50
+  QQQ:
+    kind: etf
+    settlement: physical
+    exercise: american
+    horizons: [intraday, swing]
+  SPY:
+    kind: etf
+    settlement: physical
+    exercise: american
+    horizons: [intraday, swing]
+  EWZ:
+    kind: etf
+    settlement: physical
+    exercise: american
+    horizons: [swing]
+    min_open_interest: 200
+    min_volume: 50
+  TSLA:
+    kind: equity
+    settlement: physical
+    exercise: american
+    horizons: [swing]
+    earnings_check: true
+
+# لإضافة سهم فردي: انسخ مدخل TSLA وغيّر الرمز. الأسهم الفردية للصفقات من أيام إلى أسابيع فقط.
