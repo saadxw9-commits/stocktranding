@@ -31,7 +31,7 @@ class ContractTest(unittest.TestCase):
     def test_put(self):
         self.data.update(side="put", target=7200, invalidation=7270,
                          risk_budget_usd=2000, available_cash_usd=3000)
-        self.rules.update(capital_usd=100000)
+        self.rules.update(capital_usd=100000, allow_options=False)
         self.assertEqual(self.run_case()["reason"], "options_disabled")
         self.rules["allow_options"] = True
         report = self.run_case()
@@ -51,6 +51,16 @@ class ContractTest(unittest.TestCase):
     def test_stale(self):
         self.now += timedelta(minutes=2)
         self.assertEqual(self.run_case()["reason"], "stale_or_nonlive_snapshot")
+
+    def test_full_premium_budget(self):
+        # عقد بعلاوة 831$ يمر برأس مال 1000$ بعد إلغاء حد 2%
+        self.data.update(spot=7216, target=7290, invalidation=7205,
+                         risk_budget_usd=1000, available_cash_usd=1000)
+        self.data["quotes"] = [dict(strike=7250, right="call", bid=8.2, ask=8.3, iv=0.15,
+                                    quoted_at=self.data["as_of"])]
+        report = self.run_case()
+        self.assertEqual(report["budget_usd"], 1000)
+        self.assertEqual(report["decision"], "CANDIDATE")
 
     def test_stale_atm_leg(self):
         self.data["quotes"][2]["quoted_at"] = (self.now - timedelta(minutes=2)).isoformat()

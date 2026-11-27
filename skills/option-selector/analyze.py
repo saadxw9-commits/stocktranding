@@ -61,9 +61,9 @@ def compare(data, rules, now):
     dividend = number(data["dividend_yield"]) if years else 0
     fees = number(data["fees_per_contract_usd"])
     capital = number(rules["capital_usd"])
+    # علاوة العقد = أقصى خسارة، فحدود الأسهم لا تنطبق. السقف من options_max_premium_pct.
     budget = min(number(data["available_cash_usd"]), number(data["risk_budget_usd"]),
-                 capital * min(rules["max_position_pct"], rules["max_loss_per_trade_pct"],
-                               100 - rules["cash_buffer_pct"]) / 100)
+                 capital * number(rules["options_max_premium_pct"]) / 100)
     report.update(budget_usd=budget, exit_at=exit_at.isoformat(),
                   valuation="model_constant_iv" if years else "settlement")
     strikes = {}
