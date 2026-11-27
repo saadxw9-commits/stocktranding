@@ -1,0 +1,69 @@
+# أصول عقود الخيارات المعتمدة وقواعد كل منها. يعدّلها المالك فقط.
+# قيم السيولة والحساسية مبدئية؛ تُراجع بعد أول شهر من التسجيل.
+
+defaults:
+  multiplier: 100
+  delta_band: [0.20, 0.80]          # حساسية العقد المقبولة (القيمة المطلقة)
+  max_spread_pct:                   # أقصى فارق بين العرض والطلب كنسبة من سعر الطلب، حسب مدة الصفقة
+    intraday: 5
+    swing: 12
+  max_iv_rank: 70                   # فوقها يُعد العقد غاليًا مقارنة بتاريخه (0–100)
+  min_open_interest: 500
+  min_volume: 100
+  close_before_expiry_minutes: 10   # عقود التسليم الفعلي تُغلق قبل آخر تداول بهذه المدة (خُفضت من 30 في 28 نوفمبر)
+  earnings_check: false
+  # اختيار تاريخ الانتهاء لصفقات الأيام والأسابيع (skills/option-bridge)
+  swing_expiry:
+    min_dte: 21                     # أقل عدد أيام متبقية للعقد
+    hold_multiple: 2                # الأيام المتبقية لا تقل عن ضعف مدة الاحتفاظ بالأيام التقويمية
+    window_days: 45                 # نافذة البحث بعد الحد الأدنى
+    entry_tolerance_pct: 1.0        # السعر الحالي أدنى من الدخول بأكثر من هذا = انتظر الدخول
+    stop_scenario_days: 2           # سيناريو الإلغاء يُقيَّم بعد هذا العدد من أيام التداول، لا في آخر يوم
+  # نمط العقود الرخيصة: عقود بعيدة عن السعر، العلاوة كلها هي الإلغاء. يُفعَّل بـ "mode": "cheap" في اللقطة.
+  cheap_mode:
+    delta_band: [0.05, 0.20]
+    max_premium_usd: 100            # أقصى علاوة للصفقة الواحدة شاملة الرسوم
+    min_payoff_multiple: 3          # ربح العقد عند الهدف ÷ علاوته
+    max_spread_pct: 15              # فوارق العقود الرخيصة أوسع نسبيًا
+    requires_signal: true           # لا دخول إلا بإشارة مؤكدة من reversal-detector
+
+underlyings:
+  SPX:
+    aliases: [SPXW]
+    kind: index
+    settlement: cash
+    exercise: european
+    horizons: [intraday, swing]
+  XSP:
+    kind: index
+    settlement: cash
+    exercise: european
+    horizons: [intraday, swing]
+    scale_from_spx: 0.1             # مستويات SPX ÷ 10
+    min_open_interest: 100
+    min_volume: 50
+  QQQ:
+    kind: etf
+    settlement: physical
+    exercise: american
+    horizons: [intraday, swing]
+  SPY:
+    kind: etf
+    settlement: physical
+    exercise: american
+    horizons: [intraday, swing]
+  EWZ:
+    kind: etf
+    settlement: physical
+    exercise: american
+    horizons: [swing]
+    min_open_interest: 200
+    min_volume: 50
+  TSLA:
+    kind: equity
+    settlement: physical
+    exercise: american
+    horizons: [swing]
+    earnings_check: true
+
+# لإضافة سهم فردي: انسخ مدخل TSLA وغيّر الرمز. الأسهم الفردية للصفقات من أيام إلى أسابيع فقط.

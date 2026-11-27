@@ -35,6 +35,7 @@ $env:FMP_API_KEY = "مفتاحك المجاني"
 - **أبحاث الأسهم:** مستودع Anthropic للخدمات المالية.
 - **البيانات:** tradingview-mcp مبدئيًا، ثم خدمة TradingView الرسمية بعد الاشتراك.
 - **طبقتنا:** راصد السوق، ماسح الفرص، محلل السهم، طبقة التحقق، حارس المخاطر، السجل.
+- **عقود الخيارات:** اختيار العقد، جسر الاقتراح إلى العقد، كاشف الارتداد اللحظي (ومعه ملف الحجم)، ملخص ما قبل الافتتاح، سجل الظل.
 
 التفاصيل في `CLAUDE.md`. مقارنة الأدوات المتداخلة في `docs/overlap-map.md`.
 
@@ -49,3 +50,38 @@ $env:FMP_API_KEY = "مفتاحك المجاني"
 - `config/data-sources.yaml`: مصادر البيانات.
 - `config/lenses.yaml`: عدسات المستثمرين المستخدمة.
 - `config/verification.yaml`: عتبات قياس التفاوت.
+- `config/options-universe.yaml`: أصول عقود الخيارات المعتمدة وحدود السيولة والحساسية والفارق ونمط العقود الرخيصة.
+- `config/country-etfs.yaml`: صناديق الدول وأسواقها وعملاتها لملخص ما قبل الافتتاح.
+
+## مقارنة عقود الخيارات
+
+اطلب «قارن عقود SPXW أو QQQ أو TSLA لهدفي ووقت خروجي». الأصول المعتمدة وقواعدها في `config/options-universe.yaml`. [مهارة اختيار العقد](skills/option-selector/SKILL.md) تقرأ لقطة سلسلة من الوسيط وتحسب تكلفة عقد واحد والتعادل والنتيجة عند الهدف والثبات والإلغاء. لتجربة المثال الورقي من جذر المستودع:
+
+```bash
+python skills/option-selector/analyze.py skills/option-selector/example.json --replay
+```
+
+## كاشف الارتداد اللحظي
+
+[المهارة](skills/reversal-detector/SKILL.md) تقرأ شموع SPX بأي دقة (ثانية أو دقيقة) وتطلق تنبيه المنطقة ثم إشارة الدخول وقواعد الخروج. لإعادة عرض يوم 27 نوفمبر 2026 (بيانات تقريبية من لقطات):
+
+```bash
+python skills/reversal-detector/detector.py skills/reversal-detector/fixtures/spx-2026-11-27-approx.json
+```
+
+## ملخص ما قبل الافتتاح
+
+[المهارة](skills/premarket-gap-brief/SKILL.md) تقدّر فجوة افتتاح صناديق الدول (EWZ وFXI وEWJ وغيرها) من حركة أسواقها وعملاتها أثناء إغلاق السوق الأمريكية:
+
+```bash
+python skills/premarket-gap-brief/gap_brief.py skills/premarket-gap-brief/fixtures/2026-11-27-approx.json
+```
+
+## من الاقتراح إلى العقد
+
+[الجسر](skills/option-bridge/SKILL.md) يأخذ حكم طبقة التحقق ويختار عقد الخيارات عبر عدة تواريخ انتهاء (مثال اصطناعي):
+
+```bash
+python skills/option-bridge/bridge.py plan skills/option-bridge/fixtures/verify-TSLA-synthetic.json --out plan.json
+python skills/option-bridge/bridge.py select plan.json skills/option-bridge/fixtures/chain-TSLA-synthetic.json --cash 5000 --budget 3000 --replay
+```

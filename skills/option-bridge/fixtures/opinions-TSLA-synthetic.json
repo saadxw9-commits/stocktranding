@@ -1,0 +1,54 @@
+[
+ {
+  "source": "jake",
+  "role": "primary",
+  "symbol": "TSLA",
+  "asset_class": "equity",
+  "as_of": "2026-11-27T10:30:00-05:00",
+  "direction": "long",
+  "entry": 400,
+  "stop": 385,
+  "targets": [
+   432
+  ],
+  "horizon_days": 10,
+  "confidence": 72,
+  "method": "اختراق قمة ٢٠ يومًا",
+  "evidence": [
+   {
+    "claim": "إغلاق فوق قمة ٢٠ يومًا",
+    "certainty": "مؤكد"
+   },
+   {
+    "claim": "حجم أعلى من المتوسط",
+    "certainty": "مؤكد"
+   }
+  ]
+ },
+ {
+  "source": "tradermonty",
+  "role": "secondary",
+  "symbol": "TSLA",
+  "asset_class": "equity",
+  "as_of": "2026-11-27T10:30:00-05:00",
+  "direction": "long",
+  "entry": 401,
+  "stop": 386,
+  "targets": [
+   436
+  ],
+  "horizon_days": 12,
+  "confidence": 68,
+  "method": "VCP",
+  "evidence": [
+   {
+    "claim": "انكماش التذبذب ثلاث مرات",
+    "certainty": "استنتاج"
+   },
+   {
+    "claim": "السوق في اتجاه صاعد",
+    "certainty": "منقول"
+   }
+  ]
+ }
+]

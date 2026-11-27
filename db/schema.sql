@@ -73,3 +73,49 @@ CREATE TABLE IF NOT EXISTS executions (
 CREATE INDEX IF NOT EXISTS idx_opinions_symbol ON opinions(symbol, created_at);
 CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions(status);
 CREATE INDEX IF NOT EXISTS idx_executions_symbol ON executions(symbol);
+
+-- إشارات الارتداد اللحظي على المؤشرات (skills/reversal-detector): صفقة محاكاة أو ورقية أو فعلية لكل إشارة
+CREATE TABLE IF NOT EXISTS intraday_signals (
+    id                  INTEGER PRIMARY KEY,
+    created_at          TEXT NOT NULL,      -- وقت الدخول
+    symbol              TEXT NOT NULL,
+    asset_class         TEXT NOT NULL DEFAULT 'index',
+    side                TEXT NOT NULL,      -- call / put
+    zone                TEXT,
+    entry               REAL NOT NULL,
+    result_pts          REAL,
+    result_r            REAL,
+    option_pnl_usd_est  REAL,
+    closed_at           TEXT,
+    mode                TEXT NOT NULL,      -- replay / paper / live
+    pattern             TEXT,               -- failed_breakdown / failed_breakout / higher_low / lower_high
+    contract_mode       TEXT NOT NULL DEFAULT 'standard',   -- standard / cheap
+    payload_json        TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_intraday_mode ON intraday_signals(mode, created_at);
+
+-- سجل الظل لعقود الخيارات (skills/journal/shadow.py): كل عقد قُيّم، مقبولًا أو مرفوضًا، ونتيجته بعد الخروج
+CREATE TABLE IF NOT EXISTS option_decisions (
+    id              INTEGER PRIMARY KEY,
+    created_at      TEXT NOT NULL,
+    contract_key    TEXT NOT NULL,          -- الأصل|الانتهاء|السعر|النوع
+    underlying      TEXT NOT NULL,
+    expiry          TEXT NOT NULL,
+    strike          REAL NOT NULL,
+    right_          TEXT NOT NULL,
+    mode            TEXT NOT NULL,          -- standard / cheap
+    horizon         TEXT NOT NULL,
+    ask             REAL NOT NULL,
+    delta           REAL,
+    status          TEXT NOT NULL,          -- eligible / rejected
+    reasons         TEXT NOT NULL DEFAULT '',
+    selected        INTEGER NOT NULL DEFAULT 0,
+    exit_at         TEXT NOT NULL,
+    fees            REAL NOT NULL DEFAULT 0,
+    exit_price      REAL,
+    pnl_usd         REAL,
+    return_pct      REAL,
+    resolved_at     TEXT,
+    UNIQUE(created_at, contract_key, mode, exit_at)
+);
+CREATE INDEX IF NOT EXISTS idx_option_decisions_open ON option_decisions(resolved_at, exit_at);
