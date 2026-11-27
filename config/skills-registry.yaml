@@ -10,7 +10,7 @@ tradermonty:
   memory: [trader-memory-core, signal-postmortem, weekly-performance-digest, trade-performance-coach]
   research: [scenario-analyzer, backtest-expert, data-quality-checker, trading-skills-navigator]
   crypto_reserved: [crypto-regime-analyzer]   # لا تُربط حتى تفعيل العملات
-ours: [market-watch, opportunity-scan, stock-analyst, risk-guard, verification-layer, journal, option-selector, reversal-detector]
+ours: [market-watch, opportunity-scan, stock-analyst, risk-guard, verification-layer, journal, option-selector, reversal-detector, premarket-gap-brief]
 # مستودع Anthropic للخدمات المالية: إضافة equity-research مفعّلة كاملة عبر .claude/settings.json.
 # من financial-analysis نربط مهارات المنهج فقط، دون الإضافة نفسها، لأنها تطلب ١٢ خادم بيانات مؤسسيًا مدفوعًا.
 anthropic_fs:

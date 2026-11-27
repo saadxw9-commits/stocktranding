@@ -65,3 +65,11 @@ python skills/option-selector/analyze.py skills/option-selector/example.json --r
 ```bash
 python skills/reversal-detector/detector.py skills/reversal-detector/fixtures/spx-2026-11-27-approx.json
 ```
+
+## ملخص ما قبل الافتتاح
+
+[المهارة](skills/premarket-gap-brief/SKILL.md) تقدّر فجوة افتتاح صناديق الدول (EWZ وFXI وEWJ وغيرها) من حركة أسواقها وعملاتها أثناء إغلاق السوق الأمريكية:
+
+```bash
+python skills/premarket-gap-brief/gap_brief.py skills/premarket-gap-brief/fixtures/2026-11-27-approx.json
+```

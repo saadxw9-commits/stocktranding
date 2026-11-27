@@ -1,0 +1,75 @@
+# صناديق الدول وأسواقها الأصلية لملخص ما قبل الافتتاح (skills/premarket-gap-brief).
+# fx_quote: per_usd = عدد وحدات العملة المحلية مقابل الدولار (USDBRL)، usd_per = دولار مقابل الوحدة (EURUSD).
+# beta: حساسية الصندوق لمؤشر السوق المحلي بعد التحويل بالدولار. 1.0 قيمة مبدئية تُعاير من السجل.
+# رموز TradingView للاسترشاد؛ تحقّق منها في tradingview-mcp قبل الاعتماد عليها.
+
+thresholds:
+  watch_pct: 1.5        # فجوة متوقعة تستحق المتابعة
+  large_pct: 3.0        # فجوة كبيرة
+  no_chase_minutes: 15  # لا شراء عقود في اتجاه الفجوة قبل مرور هذه المدة بعد الافتتاح
+
+etfs:
+  EWZ:
+    country: البرازيل
+    index: Ibovespa
+    index_symbol: BMFBOVESPA:IBOV
+    fx: USDBRL
+    fx_symbol: FX_IDC:USDBRL
+    fx_quote: per_usd
+    beta: 1.0
+  FXI:
+    country: الصين
+    index: Hang Seng China Enterprises
+    index_symbol: HSI:HSCEI
+    fx: USDHKD
+    fx_symbol: FX_IDC:USDHKD
+    fx_quote: per_usd
+    beta: 1.0
+  EWJ:
+    country: اليابان
+    index: TOPIX
+    index_symbol: TSE:TOPIX
+    fx: USDJPY
+    fx_symbol: FX_IDC:USDJPY
+    fx_quote: per_usd
+    beta: 1.0
+  EWY:
+    country: كوريا الجنوبية
+    index: KOSPI
+    index_symbol: KRX:KOSPI
+    fx: USDKRW
+    fx_symbol: FX_IDC:USDKRW
+    fx_quote: per_usd
+    beta: 1.0
+  EWT:
+    country: تايوان
+    index: TAIEX
+    index_symbol: TWSE:TAIEX
+    fx: USDTWD
+    fx_symbol: FX_IDC:USDTWD
+    fx_quote: per_usd
+    beta: 1.0
+  INDA:
+    country: الهند
+    index: Nifty 50
+    index_symbol: NSE:NIFTY
+    fx: USDINR
+    fx_symbol: FX_IDC:USDINR
+    fx_quote: per_usd
+    beta: 1.0
+  EWG:
+    country: ألمانيا
+    index: DAX
+    index_symbol: XETR:DAX
+    fx: EURUSD
+    fx_symbol: FX_IDC:EURUSD
+    fx_quote: usd_per
+    beta: 1.0
+  EWU:
+    country: المملكة المتحدة
+    index: FTSE 100
+    index_symbol: TVC:UKX
+    fx: GBPUSD
+    fx_symbol: FX_IDC:GBPUSD
+    fx_quote: usd_per
+    beta: 1.0
