@@ -131,7 +131,10 @@ def compare(data, rules, now, universe=None):
                   valuation=("model_constant_iv" if years else "settlement")
                   + ("_american_approx" if u["exercise"] == "american" and years else ""))
     lo_d, hi_d = cheap["delta_band"] if cheap is not None else u["delta_band"]
-    max_spread = cheap["max_spread_pct"] if cheap is not None else rules["max_option_spread_pct"]
+    spread_by_horizon = u.get("max_spread_pct") or {}
+    max_spread = cheap["max_spread_pct"] if cheap is not None else \
+        spread_by_horizon.get(horizon, rules["max_option_spread_pct"])
+    report["max_spread_pct"] = max_spread
     strikes = {}
     seen = set()
     for q in data["quotes"]:

@@ -4,6 +4,9 @@
 defaults:
   multiplier: 100
   delta_band: [0.20, 0.80]          # حساسية العقد المقبولة (القيمة المطلقة)
+  max_spread_pct:                   # أقصى فارق بين العرض والطلب كنسبة من سعر الطلب، حسب مدة الصفقة
+    intraday: 5
+    swing: 12
   max_iv_rank: 70                   # فوقها يُعد العقد غاليًا مقارنة بتاريخه (0–100)
   min_open_interest: 500
   min_volume: 100

@@ -154,3 +154,14 @@ class UniverseTest(unittest.TestCase):
         self.assertGreaterEqual(r["contracts"][0]["payoff_multiple"], 3)
         d["target"] = 646
         self.assertIn("cheap_payoff", self.run_case(d)["contracts"][0]["rejected"])
+
+    def test_spread_by_horizon(self):
+        # عقد EWZ يناير 35 بعد إغلاق 27 نوفمبر: فارق 12% يُرفض خلال اليوم ويُقبل لصفقة أسابيع
+        d = self.etf("SPY", spot=33.12, target=36, invalidation=31.5)
+        d["quotes"] = [dict(strike=35, right="call", bid=0.66, ask=0.75, iv=0.29, open_interest=5000,
+                            volume=34570, quoted_at=d["as_of"])]
+        self.assertIn("wide_spread", self.run_case(d)["contracts"][0]["rejected"])
+        d.update(horizon="swing", exit_at="2026-11-27T12:00:00-05:00")
+        r = self.run_case(d)
+        self.assertEqual(r["max_spread_pct"], 12)
+        self.assertNotIn("wide_spread", r["contracts"][0]["rejected"])
