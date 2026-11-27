@@ -2,7 +2,8 @@
 """كاشف الارتداد اللحظي على SPX بأربع طبقات:
 
 1. خريطة المناطق: مستويات ثابتة (قمة وقاع وإغلاق اليوم السابق، الجلسة الليلية، الأرقام المستديرة،
-   وحدود الحركة المتوقعة من التذبذب الضمني يوميًا وأسبوعيًا) ومستوى متحرك (قاع أو قمة الجلسة السابق)،
+   وحدود الحركة المتوقعة من التذبذب الضمني يوميًا وأسبوعيًا، ومستويات ملف الحجم للجلسة السابقة)
+   ومستوى متحرك (قاع أو قمة الجلسة السابق)،
    مع تقدير سعر العقد عند كل مستوى.
 2. إشارة الدخول بنمطين:
    - الكسر الكاذب: نطاق ضيق، ثم كسر لطرفه بحجم مرتفع قرب منطقة، ثم إغلاق خلف الطرف الآخر.
@@ -46,6 +47,7 @@ def _utf8_console() -> None:
             s.reconfigure(encoding="utf-8")
 
 sys.path.insert(0, str(ROOT / "skills" / "option-selector"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from analyze import option_value, stamp  # noqa: E402
 
 DEFAULTS = {
@@ -136,6 +138,7 @@ class Detector:
         levels = [(float(self.ctx["levels"][k]), v) for k, v in names.items()
                   if self.ctx.get("levels", {}).get(k) is not None]
         levels += self._expected_move_levels()
+        levels += self._volume_profile_levels()
         ref = self.ctx.get("reference_price")
         if ref:
             step, span = self.cfg["round_step"], self.cfg["round_span_pts"]
@@ -165,6 +168,21 @@ class Detector:
                 out.append((round(ref + m * sd, 2), f"الحد العلوي للحركة المتوقعة {label} ({m:g}σ)"))
                 out.append((round(ref - m * sd, 2), f"الحد السفلي للحركة المتوقعة {label} ({m:g}σ)"))
         return out
+
+    def _volume_profile_levels(self):
+        """مستويات ملف الحجم للجلسة السابقة: نقطة التحكم وحدّا منطقة القيمة وعقد الحجم المرتفع،
+        ونقاط التحكم غير المختبرة. تُعطى جاهزة في levels أو تُبنى من prior_bars."""
+        vp = self.ctx.get("volume_profile")
+        if not vp:
+            return []
+        from volume_profile import build, levels_for_detector
+        prior = vp.get("levels")
+        if prior is None:
+            prior = build(vp["prior_bars"], vp["bin_size"], vp.get("value_area_pct", 0.70),
+                          vp.get("price_scale", 1.0))
+        prior = dict(prior, hvn=prior.get("hvn", []))
+        return [(float(lv), name) for lv, name in
+                levels_for_detector(prior, vp.get("naked_pocs"), vp.get("include_hvn", True))]
 
     def _session_extreme(self, before: datetime, side: str):
         prior = [b for b in self.bars if b["t"] < before]

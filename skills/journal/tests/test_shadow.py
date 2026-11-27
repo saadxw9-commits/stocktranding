@@ -79,7 +79,8 @@ class IntradayStatsTest(unittest.TestCase):
         c.executescript((ROOT / "db" / "schema.sql").read_text(encoding="utf-8"))
         rows = [("failed_breakdown", "الحد السفلي للحركة المتوقعة اليومية (1σ)", 2.0),
                 ("failed_breakdown", "الحد السفلي للحركة المتوقعة الأسبوعية (1σ)", -1.0),
-                ("failed_breakdown", "قاع الجلسة السابق", 1.5)]
+                ("failed_breakdown", "قاع الجلسة السابق", 1.5),
+                ("higher_low", "أدنى منطقة القيمة للجلسة السابقة", 2.5)]
         for pat, zone, r in rows:
             c.execute("INSERT INTO intraday_signals(created_at,symbol,side,zone,entry,result_r,mode,pattern,"
                       "payload_json) VALUES('t','SPX','call',?,1,?,'paper',?,'{}')", (zone, r, pat))
@@ -88,6 +89,7 @@ class IntradayStatsTest(unittest.TestCase):
         self.assertEqual(out["الحركة المتوقعة"]["avg_r"], 0.5)
         self.assertTrue(out["الحركة المتوقعة"]["enough"])
         self.assertFalse(out["طرف الجلسة"]["enough"])
+        self.assertEqual(out["ملف الحجم"]["pattern"], "higher_low")
 
 
 if __name__ == "__main__":
