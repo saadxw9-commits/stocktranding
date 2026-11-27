@@ -73,3 +73,12 @@ python skills/reversal-detector/detector.py skills/reversal-detector/fixtures/sp
 ```bash
 python skills/premarket-gap-brief/gap_brief.py skills/premarket-gap-brief/fixtures/2026-11-27-approx.json
 ```
+
+## من الاقتراح إلى العقد
+
+[الجسر](skills/option-bridge/SKILL.md) يأخذ حكم طبقة التحقق ويختار عقد الخيارات عبر عدة تواريخ انتهاء (مثال اصطناعي):
+
+```bash
+python skills/option-bridge/bridge.py plan skills/option-bridge/fixtures/verify-TSLA-synthetic.json --out plan.json
+python skills/option-bridge/bridge.py select plan.json skills/option-bridge/fixtures/chain-TSLA-synthetic.json --cash 5000 --budget 3000 --replay
+```

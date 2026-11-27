@@ -1,0 +1,281 @@
+{
+ "underlying": "TSLA",
+ "source": "بيانات اصطناعية للاختبار فقط (أسعار محسوبة بنموذج)",
+ "feed": "live",
+ "as_of": "2026-11-27T11:00:00-05:00",
+ "spot": 401.0,
+ "iv_rank": 45,
+ "earnings_date": "2027-01-28T16:30:00-05:00",
+ "rate": 0.04,
+ "dividend_yield": 0.0,
+ "expiries": [
+  {
+   "expiry": "2026-12-11",
+   "last_trade_at": "2026-12-11T16:00:00-05:00",
+   "settlement_at": "2026-12-11T16:00:00-05:00",
+   "quotes": [
+    {
+     "strike": 390,
+     "right": "call",
+     "bid": 24.23,
+     "ask": 24.63,
+     "iv": 0.58,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 400,
+     "right": "call",
+     "bid": 18.93,
+     "ask": 19.23,
+     "iv": 0.58,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 410,
+     "right": "call",
+     "bid": 14.49,
+     "ask": 14.73,
+     "iv": 0.58,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 420,
+     "right": "call",
+     "bid": 10.86,
+     "ask": 11.04,
+     "iv": 0.58,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 440,
+     "right": "call",
+     "bid": 5.74,
+     "ask": 5.84,
+     "iv": 0.58,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 460,
+     "right": "call",
+     "bid": 2.78,
+     "ask": 2.88,
+     "iv": 0.58,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    }
+   ]
+  },
+  {
+   "expiry": "2026-12-31",
+   "last_trade_at": "2026-12-31T16:00:00-05:00",
+   "settlement_at": "2026-12-31T16:00:00-05:00",
+   "quotes": [
+    {
+     "strike": 390,
+     "right": "call",
+     "bid": 32.91,
+     "ask": 33.45,
+     "iv": 0.55,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 400,
+     "right": "call",
+     "bid": 27.87,
+     "ask": 28.31,
+     "iv": 0.55,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 410,
+     "right": "call",
+     "bid": 23.39,
+     "ask": 23.77,
+     "iv": 0.55,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 420,
+     "right": "call",
+     "bid": 19.49,
+     "ask": 19.81,
+     "iv": 0.55,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 440,
+     "right": "call",
+     "bid": 13.21,
+     "ask": 13.43,
+     "iv": 0.55,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 460,
+     "right": "call",
+     "bid": 8.7,
+     "ask": 8.84,
+     "iv": 0.55,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    }
+   ]
+  },
+  {
+   "expiry": "2027-01-15",
+   "last_trade_at": "2027-01-15T16:00:00-05:00",
+   "settlement_at": "2027-01-15T16:00:00-05:00",
+   "quotes": [
+    {
+     "strike": 390,
+     "right": "call",
+     "bid": 37.82,
+     "ask": 38.44,
+     "iv": 0.54,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 400,
+     "right": "call",
+     "bid": 32.87,
+     "ask": 33.41,
+     "iv": 0.54,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 410,
+     "right": "call",
+     "bid": 28.42,
+     "ask": 28.88,
+     "iv": 0.54,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 420,
+     "right": "call",
+     "bid": 24.44,
+     "ask": 24.84,
+     "iv": 0.54,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 440,
+     "right": "call",
+     "bid": 17.81,
+     "ask": 18.09,
+     "iv": 0.54,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 460,
+     "right": "call",
+     "bid": 12.73,
+     "ask": 12.93,
+     "iv": 0.54,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    }
+   ]
+  },
+  {
+   "expiry": "2027-03-19",
+   "last_trade_at": "2027-03-19T16:00:00-05:00",
+   "settlement_at": "2027-03-19T16:00:00-05:00",
+   "quotes": [
+    {
+     "strike": 390,
+     "right": "call",
+     "bid": 52.95,
+     "ask": 53.81,
+     "iv": 0.52,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 400,
+     "right": "call",
+     "bid": 48.24,
+     "ask": 49.02,
+     "iv": 0.52,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 410,
+     "right": "call",
+     "bid": 43.88,
+     "ask": 44.58,
+     "iv": 0.52,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 420,
+     "right": "call",
+     "bid": 39.83,
+     "ask": 40.47,
+     "iv": 0.52,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 440,
+     "right": "call",
+     "bid": 32.66,
+     "ask": 33.18,
+     "iv": 0.52,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    },
+    {
+     "strike": 460,
+     "right": "call",
+     "bid": 26.62,
+     "ask": 27.04,
+     "iv": 0.52,
+     "open_interest": 3000,
+     "volume": 800,
+     "quoted_at": "2026-11-27T11:00:00-05:00"
+    }
+   ]
+  }
+ ]
+}
