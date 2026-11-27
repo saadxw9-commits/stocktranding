@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """كاشف الارتداد اللحظي على SPX بأربع طبقات:
 
-1. خريطة المناطق: مستويات ثابتة (قمة وقاع وإغلاق اليوم السابق، الجلسة الليلية، الأرقام المستديرة)
-   ومستوى متحرك (قاع أو قمة الجلسة السابق)، مع تقدير سعر العقد عند كل مستوى.
+1. خريطة المناطق: مستويات ثابتة (قمة وقاع وإغلاق اليوم السابق، الجلسة الليلية، الأرقام المستديرة،
+   وحدود الحركة المتوقعة من التذبذب الضمني يوميًا وأسبوعيًا) ومستوى متحرك (قاع أو قمة الجلسة السابق)،
+   مع تقدير سعر العقد عند كل مستوى.
 2. إشارة الدخول بنمطين:
    - الكسر الكاذب: نطاق ضيق، ثم كسر لطرفه بحجم مرتفع قرب منطقة، ثم إغلاق خلف الطرف الآخر.
    - القاع الأعلى: عودة إلى قاع الجلسة السابق دون كسره، في نطاق ضيق، ثم إغلاق فوق النطاق
@@ -118,12 +119,36 @@ class Detector:
                  "overnight_low": "قاع الجلسة الليلية"}
         levels = [(float(self.ctx["levels"][k]), v) for k, v in names.items()
                   if self.ctx.get("levels", {}).get(k) is not None]
+        levels += self._expected_move_levels()
         ref = self.ctx.get("reference_price")
         if ref:
             step, span = self.cfg["round_step"], self.cfg["round_span_pts"]
             base = math.floor((ref - span) / step) * step
             levels += [(float(x), "رقم مستدير") for x in range(int(base), int(ref + span) + 1, int(step))]
         return levels
+
+    def _expected_move_levels(self):
+        """حدود الحركة المتوقعة: المرجع ± مضاعف × الانحراف المتوقع.
+        من التذبذب الضمني السنوي: الانحراف = المرجع × التذبذب × جذر(الأيام ÷ 252).
+        أو من سعر عقد Straddle عند المال لليوم: الانحراف اليومي ≈ سعره، والأسبوعي ≈ سعره × جذر 5."""
+        em = self.ctx.get("expected_move")
+        if not em:
+            return []
+        ref = float(em["reference"])
+        out = []
+        for label, days in (("اليومية", 1), ("الأسبوعية", 5)):
+            if label == "الأسبوعية" and not em.get("weekly", True):
+                continue
+            if em.get("iv"):
+                sd = ref * float(em["iv"]) * math.sqrt(days / 252)
+            elif em.get("daily_straddle_pts"):
+                sd = float(em["daily_straddle_pts"]) * math.sqrt(days)
+            else:
+                raise ValueError("expected_move needs iv or daily_straddle_pts")
+            for m in em.get("multiples", [1.0]):
+                out.append((round(ref + m * sd, 2), f"الحد العلوي للحركة المتوقعة {label} ({m:g}σ)"))
+                out.append((round(ref - m * sd, 2), f"الحد السفلي للحركة المتوقعة {label} ({m:g}σ)"))
+        return out
 
     def _session_extreme(self, before: datetime, side: str):
         prior = [b for b in self.bars if b["t"] < before]

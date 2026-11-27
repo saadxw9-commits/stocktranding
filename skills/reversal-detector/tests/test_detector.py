@@ -86,6 +86,23 @@ class DetectorTest(unittest.TestCase):
         self.assertEqual(entry["pattern"], "higher_low")
         self.assertEqual(entry["stop"], round(sig["extreme"] - 1.0, 2))
 
+    def test_expected_move_zone(self):
+        # تذبذب 16% على 5000: الانحراف اليومي ≈ 50.4، فالحد السفلي ≈ 4949.6
+        em = {"reference": 5000, "iv": 0.16}
+        flat = [(4951, 4952, 4950, 4951, 100)] * 8
+        sweep = [(4951, 4951, 4948.5, 4949, 200), (4949, 4953, 4949, 4952.5, 150)]
+        rally = [(4953 + i, 4954 + i, 4952.5 + i, 4954 + i, 100) for i in range(80)]
+        d = ctx(bars_from(flat + sweep + rally), levels={}, reference_price=None, expected_move=em)
+        r = run(d)
+        sig = next(e for e in r["events"] if e["type"] == "signal")
+        self.assertEqual(sig["zone"], "الحد السفلي للحركة المتوقعة اليومية (1σ)")
+        self.assertAlmostEqual(sig["zone_level"], 4949.6, places=1)
+        entry = next(e for e in r["events"] if e["type"] == "entry")
+        self.assertEqual(entry["t1_zone"], "الحد العلوي للحركة المتوقعة اليومية (1σ)")
+        # من سعر Straddle: الأسبوعي = اليومي × جذر 5
+        lv = Detector(dict(d, expected_move={"reference": 5000, "daily_straddle_pts": 40}))._expected_move_levels()
+        self.assertIn((round(5000 + 40 * 5 ** 0.5, 2), "الحد العلوي للحركة المتوقعة الأسبوعية (1σ)"), lv)
+
     def test_time_order(self):
         det = Detector(ctx([]))
         b = bars_from(FLAT[:2])

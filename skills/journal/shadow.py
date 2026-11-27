@@ -7,6 +7,7 @@
     python3 skills/journal/shadow.py resolve --prices <أسعار_الخروج>.json [--as-of وقت]   # {"QQQ|2026-11-27|645|call": 5.15}
     python3 skills/journal/shadow.py pending                                 # العقود التي حان حسمها
     python3 skills/journal/shadow.py stats [--min-sample 30]
+    python3 skills/journal/shadow.py intraday-stats [--mode paper]           # إشارات الارتداد حسب النمط والمنطقة
 """
 from __future__ import annotations
 
@@ -161,6 +162,35 @@ def stats(min_sample: int = 30, c=None) -> dict:
     return out
 
 
+def zone_kind(zone: str | None) -> str:
+    z = zone or ""
+    for key, kind in (("لحركة المتوقعة", "الحركة المتوقعة"), ("رقم مستدير", "رقم مستدير"),
+                      ("الجلسة السابق", "طرف الجلسة"), ("اليوم السابق", "اليوم السابق"),
+                      ("الجلسة الليلية", "الجلسة الليلية")):
+        if key in z:
+            return kind
+    return z or "بلا منطقة"
+
+
+def intraday_stats(min_sample: int = 30, c=None, mode: str | None = None) -> list[dict]:
+    """نتائج إشارات الارتداد مجمّعة حسب النمط ونوع المنطقة ونوع العقد."""
+    c = c or db()
+    q = "SELECT pattern, zone, contract_mode, result_r FROM intraday_signals WHERE result_r IS NOT NULL"
+    args = ()
+    if mode:
+        q += " AND mode=?"
+        args = (mode,)
+    groups = defaultdict(list)
+    for r in c.execute(q, args):
+        groups[(r["pattern"] or "؟", zone_kind(r["zone"]), r["contract_mode"])].append(r["result_r"])
+    out = []
+    for (pattern, kind, cmode), rs in sorted(groups.items()):
+        out.append(dict(pattern=pattern, zone_kind=kind, contract_mode=cmode, n=len(rs),
+                        win_rate=round(sum(x > 0 for x in rs) / len(rs) * 100, 1),
+                        avg_r=round(sum(rs) / len(rs), 2), enough=len(rs) >= min_sample))
+    return out
+
+
 def print_stats(s: dict):
     if not s:
         print("لا عقود محسومة بعد.")
@@ -184,6 +214,8 @@ def main():
     p.add_argument("--as-of", help="وقت الحسم (للمحاكاة التاريخية)، بصيغة ISO مع المنطقة الزمنية")
     p = sp.add_parser("pending"); p.add_argument("--as-of")
     p = sp.add_parser("stats"); p.add_argument("--min-sample", type=int, default=30)
+    p = sp.add_parser("intraday-stats"); p.add_argument("--min-sample", type=int, default=30)
+    p.add_argument("--mode", choices=["replay", "paper", "live"])
     a = ap.parse_args()
     at = datetime.fromisoformat(a.as_of) if getattr(a, "as_of", None) else None
     if a.cmd == "add":
@@ -193,6 +225,15 @@ def main():
     elif a.cmd == "pending":
         keys = pending(at)
         print("\n".join(keys) if keys else "لا عقود تنتظر الحسم.")
+    elif a.cmd == "intraday-stats":
+        rows = intraday_stats(a.min_sample, mode=a.mode)
+        if not rows:
+            print("لا إشارات محسومة بعد.")
+        print("| النمط | نوع المنطقة | العقد | العدد | نسبة الربح | متوسط العائد بوحدة المخاطرة | الحكم |")
+        print("|---|---|---|---|---|---|---|")
+        for r in rows:
+            print(f"| {r['pattern']} | {r['zone_kind']} | {r['contract_mode']} | {r['n']} | {r['win_rate']}% | "
+                  f"{r['avg_r']:+} | {'كافية' if r['enough'] else 'عينة صغيرة'} |")
     else:
         print_stats(stats(a.min_sample))
 

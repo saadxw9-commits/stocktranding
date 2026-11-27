@@ -72,5 +72,23 @@ class ShadowTest(unittest.TestCase):
         self.assertEqual(shadow.stats(100, c)["standard"]["filters"]["wide_spread"]["verdict"], "عينة صغيرة")
 
 
+class IntradayStatsTest(unittest.TestCase):
+    def test_group_by_zone_kind(self):
+        c = sqlite3.connect(":memory:")
+        c.row_factory = sqlite3.Row
+        c.executescript((ROOT / "db" / "schema.sql").read_text(encoding="utf-8"))
+        rows = [("failed_breakdown", "الحد السفلي للحركة المتوقعة اليومية (1σ)", 2.0),
+                ("failed_breakdown", "الحد السفلي للحركة المتوقعة الأسبوعية (1σ)", -1.0),
+                ("failed_breakdown", "قاع الجلسة السابق", 1.5)]
+        for pat, zone, r in rows:
+            c.execute("INSERT INTO intraday_signals(created_at,symbol,side,zone,entry,result_r,mode,pattern,"
+                      "payload_json) VALUES('t','SPX','call',?,1,?,'paper',?,'{}')", (zone, r, pat))
+        out = {x["zone_kind"]: x for x in shadow.intraday_stats(2, c)}
+        self.assertEqual(out["الحركة المتوقعة"]["n"], 2)
+        self.assertEqual(out["الحركة المتوقعة"]["avg_r"], 0.5)
+        self.assertTrue(out["الحركة المتوقعة"]["enough"])
+        self.assertFalse(out["طرف الجلسة"]["enough"])
+
+
 if __name__ == "__main__":
     unittest.main()
