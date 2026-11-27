@@ -17,3 +17,7 @@ allow_options: false
 execution:
   enabled: false               # لا يُفعَّل إلا بقرار مكتوب من المالك
   mode: paper                  # عند التفعيل لاحقًا: paper أولًا ثم live
+
+# فلاتر جودة خاصة بمقارنة عقود الخيارات، قابلة للضبط.
+max_quote_age_seconds: 60
+max_option_spread_pct: 5

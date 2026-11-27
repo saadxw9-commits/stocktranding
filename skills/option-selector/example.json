@@ -1,0 +1,52 @@
+{
+  "series": "SPXW",
+  "source": "synthetic test fixture only",
+  "feed": "live",
+  "as_of": "2026-11-27T10:45:00-05:00",
+  "last_trade_at": "2026-11-27T13:00:00-05:00",
+  "settlement_at": "2026-11-27T13:00:00-05:00",
+  "exit_at": "2026-11-27T13:00:00-05:00",
+  "side": "call",
+  "spot": 7262,
+  "target": 7290,
+  "invalidation": 7247,
+  "available_cash_usd": 1000,
+  "risk_budget_usd": 20,
+  "fees_per_contract_usd": 0,
+  "rate": 0.04,
+  "dividend_yield": 0.012,
+  "quotes": [
+    {
+      "strike": 7250,
+      "right": "call",
+      "bid": 22,
+      "ask": 22.3,
+      "iv": 0.18,
+      "quoted_at": "2026-11-27T10:45:00-05:00"
+    },
+    {
+      "strike": 7260,
+      "right": "call",
+      "bid": 11.7,
+      "ask": 12,
+      "iv": 0.18,
+      "quoted_at": "2026-11-27T10:45:00-05:00"
+    },
+    {
+      "strike": 7260,
+      "right": "put",
+      "bid": 10.3,
+      "ask": 10.5,
+      "iv": 0.18,
+      "quoted_at": "2026-11-27T10:45:00-05:00"
+    },
+    {
+      "strike": 7300,
+      "right": "call",
+      "bid": 4.5,
+      "ask": 4.7,
+      "iv": 0.18,
+      "quoted_at": "2026-11-27T10:45:00-05:00"
+    }
+  ]
+}

@@ -49,3 +49,11 @@ $env:FMP_API_KEY = "مفتاحك المجاني"
 - `config/data-sources.yaml`: مصادر البيانات.
 - `config/lenses.yaml`: عدسات المستثمرين المستخدمة.
 - `config/verification.yaml`: عتبات قياس التفاوت.
+
+## مقارنة عقود الخيارات
+
+اطلب «قارن عقود SPXW لهدفي ووقت خروجي». [مهارة اختيار العقد](skills/option-selector/SKILL.md) تقرأ لقطة سلسلة من الوسيط وتحسب تكلفة عقد واحد والتعادل والنتيجة عند الهدف والثبات والإلغاء. لتجربة المثال الورقي من جذر المستودع:
+
+```bash
+python skills/option-selector/analyze.py skills/option-selector/example.json --replay
+```
