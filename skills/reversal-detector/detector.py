@@ -22,6 +22,8 @@
 from __future__ import annotations
 
 import argparse
+import bisect
+from collections import deque
 import json
 import math
 import sys
@@ -121,6 +123,17 @@ class Detector:
         self.close_at = stamp(ctx["session_close"])
         self.option = OptionMap(ctx.get("option"), self.cfg)
         self.bars: list[dict] = []
+        # فهارس تُحدَّث مع كل شمعة لتبقى الكلفة ثابتة تقريبًا على شموع الثانية
+        self._ts: list[datetime] = []
+        self._lo_idx: list[int] = []   # فهرس أدنى قاع حتى كل موضع (الأول عند التساوي)
+        self._hi_idx: list[int] = []   # فهرس أعلى قمة حتى كل موضع
+        # إحصاءات نافذة النطاق لكل شمعة (الشموع السابقة خلال range_seconds)، تُحسب مرة واحدة عند وصول الشمعة
+        self._wstats: list[tuple] = []     # (عدد، أدنى قاع، أعلى قمة، مجموع الحجم، عدد الأحجام الموجودة)
+        self._dq_lo: deque = deque()
+        self._dq_hi: deque = deque()
+        self._left = 0
+        self._vsum = [0.0]
+        self._vcnt = [0]
         self.events: list[dict] = []
         self.pending = None
         self.position = None
@@ -185,11 +198,11 @@ class Detector:
                 levels_for_detector(prior, vp.get("naked_pocs"), vp.get("include_hvn", True))]
 
     def _session_extreme(self, before: datetime, side: str):
-        prior = [b for b in self.bars if b["t"] < before]
-        if len(prior) < self.cfg["min_range_bars"]:
+        n = bisect.bisect_left(self._ts, before)
+        if n < self.cfg["min_range_bars"]:
             return None
-        return (min(b["l"] for b in prior), "قاع الجلسة السابق") if side == "call" else \
-               (max(b["h"] for b in prior), "قمة الجلسة السابقة")
+        return (self.bars[self._lo_idx[n - 1]]["l"], "قاع الجلسة السابق") if side == "call" else \
+               (self.bars[self._hi_idx[n - 1]]["h"], "قمة الجلسة السابقة")
 
     def _near_zone(self, price, before, side):
         tol = self.cfg["zone_tolerance_pts"]
@@ -220,7 +233,7 @@ class Detector:
     def _window(self, i):
         t = self.bars[i]["t"]
         start = t - timedelta(seconds=self.cfg["range_seconds"])
-        return [b for b in self.bars[:i] if b["t"] >= start], start
+        return self.bars[bisect.bisect_left(self._ts, start, 0, i):i], start
 
     def _check_signal(self):
         j = len(self.bars) - 1
@@ -231,17 +244,16 @@ class Detector:
                 break
             if i in self.used_sweeps:
                 continue
-            win, start = self._window(i)
-            if len(win) < cfg["min_range_bars"]:
+            n_w, r_lo, r_hi, v_sum, v_cnt = self._wstats[i]
+            if n_w < cfg["min_range_bars"]:
                 continue
-            r_lo, r_hi = min(b["l"] for b in win), max(b["h"] for b in win)
             if r_hi - r_lo > cfg["max_range_pts"]:
                 continue
+            start = self.bars[i]["t"] - timedelta(seconds=cfg["range_seconds"])
             sweep = self.bars[i]
-            vols = [b.get("v") for b in win]
             vol_ok = True
-            if sweep.get("v") is not None and all(v is not None for v in vols):
-                avg = sum(vols) / len(vols)
+            if sweep.get("v") is not None and v_cnt == n_w:
+                avg = v_sum / n_w
                 vol_ok = avg == 0 or sweep["v"] >= cfg["volume_ratio"] * avg
             seg = self.bars[i:j + 1]
             for side, swept, reclaimed, extreme in (
@@ -271,17 +283,19 @@ class Detector:
         cfg = self.cfg
         bar = self.bars[-1]
         now = bar["t"]
-        win = [b for b in self.bars[:-1] if b["t"] >= now - timedelta(seconds=cfg["range_seconds"])]
+        n = len(self.bars) - 1
+        w0 = bisect.bisect_left(self._ts, now - timedelta(seconds=cfg["range_seconds"]), 0, n)
+        win = self.bars[w0:n]
         if len(win) < cfg["min_range_bars"]:
             return
-        prior = [b for b in self.bars if b["t"] < win[0]["t"]]
-        if len(prior) < cfg["min_range_bars"]:
+        k = bisect.bisect_left(self._ts, win[0]["t"])
+        if k < cfg["min_range_bars"]:
             return
         w_lo, w_hi = min(b["l"] for b in win), max(b["h"] for b in win)
         if w_hi - w_lo > cfg["max_range_pts"]:
             return
         tol, age = cfg["zone_tolerance_pts"], cfg["retest_min_age_seconds"]
-        lo_bar, hi_bar = min(prior, key=lambda b: b["l"]), max(prior, key=lambda b: b["h"])
+        lo_bar, hi_bar = self.bars[self._lo_idx[k - 1]], self.bars[self._hi_idx[k - 1]]
         cases = (
             ("call", "higher_low", "قاع الجلسة السابق", lo_bar["l"], w_lo,
              lo_bar["l"] < w_lo <= lo_bar["l"] + tol and bar["l"] > lo_bar["l"]
@@ -388,7 +402,31 @@ class Detector:
         start = len(self.events)
         if self.bars and bar["t"] <= self.bars[-1]["t"]:
             raise ValueError("bars must be in time order")
+        i = len(self.bars)
+        start_w = bar["t"] - timedelta(seconds=self.cfg["range_seconds"])
+        while self._dq_lo and self._ts[self._dq_lo[0]] < start_w:
+            self._dq_lo.popleft()
+        while self._dq_hi and self._ts[self._dq_hi[0]] < start_w:
+            self._dq_hi.popleft()
+        while self._left < i and self._ts[self._left] < start_w:
+            self._left += 1
+        self._wstats.append((i - self._left,
+                             self.bars[self._dq_lo[0]]["l"] if self._dq_lo else None,
+                             self.bars[self._dq_hi[0]]["h"] if self._dq_hi else None,
+                             self._vsum[i] - self._vsum[self._left], self._vcnt[i] - self._vcnt[self._left]))
         self.bars.append(bar)
+        while self._dq_lo and self.bars[self._dq_lo[-1]]["l"] >= bar["l"]:
+            self._dq_lo.pop()
+        self._dq_lo.append(i)
+        while self._dq_hi and self.bars[self._dq_hi[-1]]["h"] <= bar["h"]:
+            self._dq_hi.pop()
+        self._dq_hi.append(i)
+        v = bar.get("v")
+        self._vsum.append(self._vsum[-1] + (v or 0.0))
+        self._vcnt.append(self._vcnt[-1] + (v is not None))
+        self._ts.append(bar["t"])
+        self._lo_idx.append(i if i == 0 or bar["l"] < self.bars[self._lo_idx[-1]]["l"] else self._lo_idx[-1])
+        self._hi_idx.append(i if i == 0 or bar["h"] > self.bars[self._hi_idx[-1]]["h"] else self._hi_idx[-1])
         if self.pending:
             self._open(bar)
         if self.position:
