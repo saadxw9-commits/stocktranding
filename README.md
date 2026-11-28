@@ -77,6 +77,12 @@ python skills/reversal-detector/detector.py skills/reversal-detector/fixtures/sp
 python skills/premarket-gap-brief/gap_brief.py skills/premarket-gap-brief/fixtures/2026-11-27-approx.json
 ```
 
+[ملخص SPX الصباحي](skills/spx-premarket-brief/SKILL.md) يبحث عن القيمة العادلة لعقود S&P 500 الآجلة في CNBC (وبديلها Briefing.com)، ويحسب افتتاح SPX الضمني ويقرؤه على مستويات الجلسة السابقة وعقودك:
+
+```bash
+python skills/spx-premarket-brief/premarket.py skills/spx-premarket-brief/fixtures/example.json
+```
+
 ## من الاقتراح إلى العقد
 
 [الجسر](skills/option-bridge/SKILL.md) يأخذ حكم طبقة التحقق ويختار عقد الخيارات عبر عدة تواريخ انتهاء (مثال اصطناعي):

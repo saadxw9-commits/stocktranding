@@ -12,6 +12,7 @@ description: راصد السوق الأمريكي. يصدر تقريرًا عر�
 3. الأحداث: `equity-research:catalyst-calendar` و`economic-calendar-fetcher` و`earnings-calendar` لهذا الأسبوع.
 4. الأخبار المؤثرة: `market-news-analyst`.
 5. نسبة الانكشاف المقترحة: `exposure-coach`.
+6. **افتتاح SPX الضمني:** شغّل `spx-premarket-brief` (بحث القيمة العادلة في CNBC ثم Briefing.com، بين 4:30 و5:15 م بتوقيت الرياض). أدرج الافتتاح الضمني وتصنيف الفجوة وموقعها من الجلسة السابقة في تقرير الصباح.
 
 ## بعد الإغلاق
 

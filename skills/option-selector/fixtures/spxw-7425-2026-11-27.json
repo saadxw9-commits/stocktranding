@@ -1,0 +1,118 @@
+{
+  "series": "SPXW",
+  "underlying": "SPXW",
+  "source": "لقطات شاشة المالك بعد إغلاق 27 نوفمبر 2026: سلسلة الوسيط ومؤشر SPX من Yahoo Finance. الهدف فرضية (+2%)، والإلغاء افتتاح الجمعة. متوسط الحجم مقطوع في الصورة (5.x مليار) فاستُخدم 5 مليار.",
+  "feed": "live",
+  "as_of": "2026-11-27T13:00:00-05:00",
+  "last_trade_at": "2026-11-30T16:00:00-05:00",
+  "settlement_at": "2026-11-30T16:00:00-05:00",
+  "exit_at": "2026-11-30T15:30:00-05:00",
+  "side": "call",
+  "spot": 7297.49,
+  "target": 7443,
+  "invalidation": 7262.61,
+  "available_cash_usd": 7000,
+  "risk_budget_usd": 400,
+  "fees_per_contract_usd": 0,
+  "rate": 0.04,
+  "dividend_yield": 0.012,
+  "horizon": "intraday",
+  "prior_session": {
+    "open": 7262.61,
+    "high": 7304.1,
+    "low": 7211.46,
+    "close": 7297.49,
+    "volume": 1754000000.0,
+    "avg_volume": 5000000000.0
+  },
+  "quotes": [
+    {
+      "strike": 7410,
+      "right": "call",
+      "bid": 5.4,
+      "ask": 5.6,
+      "iv": 0.1726,
+      "delta": 0.121,
+      "quoted_at": "2026-11-27T13:00:00-05:00",
+      "open_interest": 557,
+      "volume": 1190
+    },
+    {
+      "strike": 7415,
+      "right": "call",
+      "bid": 4.8,
+      "ask": 5.0,
+      "iv": 0.1722,
+      "delta": 0.111,
+      "quoted_at": "2026-11-27T13:00:00-05:00",
+      "open_interest": 456,
+      "volume": 2750
+    },
+    {
+      "strike": 7420,
+      "right": "call",
+      "bid": 4.2,
+      "ask": 4.4,
+      "iv": 0.1713,
+      "delta": 0.1,
+      "quoted_at": "2026-11-27T13:00:00-05:00",
+      "open_interest": 472,
+      "volume": 1590
+    },
+    {
+      "strike": 7425,
+      "right": "call",
+      "bid": 3.7,
+      "ask": 3.9,
+      "iv": 0.1709,
+      "delta": 0.09,
+      "quoted_at": "2026-11-27T13:00:00-05:00",
+      "open_interest": 1690,
+      "volume": 4690
+    },
+    {
+      "strike": 7430,
+      "right": "call",
+      "bid": 3.2,
+      "ask": 3.5,
+      "iv": 0.1704,
+      "delta": 0.082,
+      "quoted_at": "2026-11-27T13:00:00-05:00",
+      "open_interest": 697,
+      "volume": 1500
+    },
+    {
+      "strike": 7435,
+      "right": "call",
+      "bid": 2.8,
+      "ask": 3.1,
+      "iv": 0.1701,
+      "delta": 0.073,
+      "quoted_at": "2026-11-27T13:00:00-05:00",
+      "open_interest": 640,
+      "volume": 1420
+    },
+    {
+      "strike": 7440,
+      "right": "call",
+      "bid": 2.55,
+      "ask": 2.7,
+      "iv": 0.1703,
+      "delta": 0.066,
+      "quoted_at": "2026-11-27T13:00:00-05:00",
+      "open_interest": 862,
+      "volume": 1760
+    },
+    {
+      "strike": 7445,
+      "right": "call",
+      "bid": 2.15,
+      "ask": 2.35,
+      "iv": 0.1691,
+      "delta": 0.059,
+      "quoted_at": "2026-11-27T13:00:00-05:00",
+      "open_interest": 576,
+      "volume": 1300
+    }
+  ]
+}
