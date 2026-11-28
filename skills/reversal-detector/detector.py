@@ -73,6 +73,16 @@ DEFAULTS = {
     "flat_before_close_seconds": 900,
     "rate": 0.04,
     "dividend_yield": 0.012,
+    # نمط الاستمرار: كسر مستوى ثم اختباره من الجهة الأخرى (Put عند فشل الاستعادة، Call عند صمود الاختبار).
+    # فرضية معلنة، معطّلة افتراضيًا حتى تُختبر على فترة مستقلة ويقرر المالك (docs/lessons-learned.md، القاعدة ٦).
+    "level_retest": False,
+    "level_break_pts": 1.0,          # إغلاق خلف المستوى بهذا الفارق على الأقل يُعد كسرًا
+    "level_retest_min_away_pts": 3.0,  # يجب أن يبتعد السعر عن المستوى بعد الكسر قبل العودة لاختباره
+    "level_retest_tol_pts": 2.0,     # العودة إلى المستوى بهذا الفارق تُعد اختبارًا
+    "level_retest_min_seconds": 120, # أقل عمر للكسر قبل قبول الاختبار
+    "level_retest_window_seconds": 1800,  # أقصى عمر للكسر
+    # بعد الهدف الأول (والباقي على سعر الدخول): إشارة معاكسة تغلق الباقي وتفتح الاتجاه الجديد
+    "reverse_on_opposite_signal": False,   # فرضية معلنة، معطّلة افتراضيًا
 }
 YEAR = 365 * 86400
 
@@ -143,6 +153,7 @@ class Detector:
         self.last_alert: dict[str, datetime] = {}
         self.last_signal: dict[tuple, datetime] = {}
         self.static = self._static_levels()
+        self._breaks: dict[tuple, dict] = {}   # (المستوى، الاتجاه) -> حالة الكسر لنمط الاستمرار
 
     # ---------- الطبقة ١: المناطق ----------
     def _static_levels(self):
@@ -151,6 +162,9 @@ class Detector:
                  "overnight_low": "قاع الجلسة الليلية"}
         levels = [(float(self.ctx["levels"][k]), v) for k, v in names.items()
                   if self.ctx.get("levels", {}).get(k) is not None]
+        for item in self.ctx.get("levels", {}).get("custom", []) or []:
+            # مستويات خارجية (خطة منشورة، محلل، مصدر آخر): تُوسَم لتُقاس نتائجها منفصلة
+            levels.append((float(item["price"]), f"خارجي: {item.get('name', item['price'])}"))
         levels += self._expected_move_levels()
         levels += self._volume_profile_levels()
         ref = self.ctx.get("reference_price")
@@ -428,20 +442,102 @@ class Detector:
         self._ts.append(bar["t"])
         self._lo_idx.append(i if i == 0 or bar["l"] < self.bars[self._lo_idx[-1]]["l"] else self._lo_idx[-1])
         self._hi_idx.append(i if i == 0 or bar["h"] > self.bars[self._hi_idx[-1]]["h"] else self._hi_idx[-1])
+        breaks_ready = self._track_breaks(bar)
         if self.pending:
             self._open(bar)
         if self.position:
             self._manage(bar)
+            if self.position and self.position.get("t1_done") and self.cfg["reverse_on_opposite_signal"]:
+                self._check_reverse(bar)
         elif not self.pending:
             self._zone_alerts(bar)
             self._check_signal()
+            if not self.pending and breaks_ready:
+                self._check_level_retest(bar)
         return self.events[start:]
+
+    def _check_reverse(self, bar):
+        """الباقي بلا مخاطرة بعد الهدف الأول: إشارة معاكسة تغلقه عند إغلاق الشمعة وتفتح الاتجاه الجديد."""
+        held = self.position["side"]
+        self._check_signal()
+        if not self.pending and self._breaks:
+            self._check_level_retest(bar)
+        if not self.pending:
+            return
+        if self.pending["side"] == held:
+            self.pending = None          # إشارة في الاتجاه نفسه لا تضيف مركزًا ثانيًا
+            return
+        self._fill(bar["t"], bar["c"], self.position["remaining"], "reverse")
+
+    # ---------- نمط الاستمرار: كسر ثم اختبار ----------
+    def _levels_unique(self):
+        seen = {}
+        for lv, name in self.static:
+            seen.setdefault(round(lv, 2), name)
+        return seen
+
+    def _track_breaks(self, bar) -> bool:
+        """يتتبع كسر كل مستوى ثابت بالإغلاق، وأبعد مسافة بعده، ويلغي الكسر إذا استُعيد المستوى."""
+        if not self.cfg["level_retest"] or len(self.bars) < 2:
+            return False
+        prev_c, c, brk = self.bars[-2]["c"], bar["c"], self.cfg["level_break_pts"]
+        for lv, name in self._levels_unique().items():
+            down, up = self._breaks.get((lv, "down")), self._breaks.get((lv, "up"))
+            if prev_c >= lv and c <= lv - brk and not (down and not down["done"]):
+                # كسر جديد فقط إن لم يكن هناك كسر قائم: الإغلاق عند المستوى ثم تحته اختبار لا كسر جديد
+                self._breaks[(lv, "down")] = dict(at=bar["t"], name=name, away=lv - bar["l"], done=False)
+            elif down and not down["done"]:
+                if c > lv:   # الإغلاق عند المستوى تمامًا ليس استعادة
+                    del self._breaks[(lv, "down")]
+                else:
+                    down["away"] = max(down["away"], lv - bar["l"])
+            if prev_c <= lv and c >= lv + brk and not (up and not up["done"]):
+                self._breaks[(lv, "up")] = dict(at=bar["t"], name=name, away=bar["h"] - lv, done=False)
+            elif up and not up["done"]:
+                if c < lv:
+                    del self._breaks[(lv, "up")]
+                else:
+                    up["away"] = max(up["away"], bar["h"] - lv)
+        return True
+
+    def _check_level_retest(self, bar):
+        cfg, now = self.cfg, bar["t"]
+        tol, away = cfg["level_retest_tol_pts"], cfg["level_retest_min_away_pts"]
+        for (lv, direction), st in sorted(self._breaks.items(), key=lambda kv: kv[1]["at"], reverse=True):
+            if st["done"]:
+                continue
+            age = (now - st["at"]).total_seconds()
+            if age < cfg["level_retest_min_seconds"] or age > cfg["level_retest_window_seconds"]:
+                continue
+            if direction == "down":   # عاد إلى المستوى من تحته وفشل في استعادته
+                ok = st["away"] >= away and bar["h"] >= lv - tol and bar["c"] < lv and bar["c"] < bar["o"]
+                side, pattern, extreme = "put", "breakdown_retest", max(bar["h"], lv)
+            else:                     # عاد إلى المستوى من فوقه وصمد
+                ok = st["away"] >= away and bar["l"] <= lv + tol and bar["c"] > lv and bar["c"] > bar["o"]
+                side, pattern, extreme = "call", "breakout_retest", min(bar["l"], lv)
+            if not ok:
+                continue
+            st["done"] = True
+            self.pending = dict(side=side, pattern=pattern, sweep_at=st["at"], signal_at=now, extreme=extreme,
+                                range_low=bar["l"], range_high=bar["h"], zone=st["name"], zone_level=lv,
+                                sweep_volume=None)
+            self._emit("signal", now, **{k: v for k, v in self.pending.items() if k != "signal_at"})
+            return
 
     def finish(self):
         if self.position:
             last = self.bars[-1]
             self._fill(last["t"], last["c"], self.position["remaining"], "end_of_data")
         return self.events
+
+
+def add_external_levels(data: dict, plan: dict, shift: float = 0.0) -> dict:
+    """يدمج مستويات خطة خارجية في levels.custom. shift لنقل المستويات (مثل فرق ES عن SPX)."""
+    lv = data.setdefault("levels", {})
+    custom = lv.setdefault("custom", [])
+    for item in plan.get("levels", []):
+        custom.append(dict(price=float(item["price"]) + shift, name=item.get("name", str(item["price"]))))
+    return data
 
 
 def bar_seconds(bars):
@@ -537,8 +633,13 @@ def main():
     ap.add_argument("--mode", default="replay", choices=["replay", "paper", "live"])
     ap.add_argument("--contract-mode", default="standard", choices=["standard", "cheap"],
                     help="نوع العقود المرتبطة بالإشارات، لتُقاس كل فئة في السجل منفصلة")
+    ap.add_argument("--levels-file", type=Path, action="append", default=[],
+                    help="خطة خارجية (مثل fixtures/external-plans/) تُضاف مستوياتها مناطقَ موسومة «خارجي»")
     a = ap.parse_args()
-    report = run(json.loads(a.bars.read_text(encoding="utf-8")))
+    data = json.loads(a.bars.read_text(encoding="utf-8"))
+    for f in a.levels_file:
+        add_external_levels(data, json.loads(f.read_text(encoding="utf-8")))
+    report = run(data)
     report["mode"] = a.mode
     for e in report["events"]:
         print(describe(e))

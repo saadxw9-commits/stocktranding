@@ -195,12 +195,16 @@ def build_context(prev: dict, day: dict, symbol: str, scale: float, bin_size: fl
 
 
 # ---------- التشغيل ----------
-def replay(bars, symbol, scale=None, bin_size=0.5, iv=None, cfg=None, out: Path | None = None):
+def replay(bars, symbol, scale=None, bin_size=0.5, iv=None, cfg=None, out: Path | None = None,
+           plans: list[dict] | None = None, levels_shift: float = 0.0):
     scale = resolve_scale(symbol, scale)
     sessions = split_sessions(bars)
     results = []
     for prev, day in zip(sessions, sessions[1:]):
         ctx = build_context(prev, day, symbol, scale, bin_size, iv)
+        for plan in plans or []:
+            if str(plan.get("date")) == str(day["date"]):
+                detector.add_external_levels(ctx, plan, levels_shift)
         rep = detector.run(ctx, cfg)
         rep["date"] = day["date"].isoformat()
         rep["scale"] = scale
@@ -446,6 +450,10 @@ def main():
     r.add_argument("--iv", type=float, help="تذبذب ضمني سنوي (مثل 0.16) لمناطق الحركة المتوقعة")
     r.add_argument("--out", type=Path)
     r.add_argument("--journal", action="store_true")
+    r.add_argument("--levels-file", type=Path, action="append", default=[],
+                   help="خطة خارجية بتاريخها؛ تُضاف مستوياتها لجلسة ذلك اليوم فقط")
+    r.add_argument("--levels-shift", type=float, default=0.0,
+                   help="نقل المستويات الخارجية بالنقاط (مثل فرق ES عن SPX عند الإعادة على ES)")
     r.add_argument("--contract-mode", default="standard", choices=["standard", "cheap"])
     o = sub.add_parser("price-options")
     o.add_argument("replay_dir", type=Path)
@@ -470,7 +478,9 @@ def main():
                              encoding="utf-8")
         return
     bars = load_csv(a.csv, a.filter)
-    agg, results = replay(bars, a.symbol, a.scale, a.bin, a.iv, out=a.out)
+    plans = [json.loads(f.read_text(encoding="utf-8")) for f in a.levels_file]
+    agg, results = replay(bars, a.symbol, a.scale, a.bin, a.iv, out=a.out, plans=plans,
+                          levels_shift=a.levels_shift)
     for rep in results:
         s = rep["summary"]
         print(f"{rep['date']}: إشارات {s['signals']} | مرفوضة {s['rejected']} | صفقات {s['trades']} | {s['total_r']:+}R")

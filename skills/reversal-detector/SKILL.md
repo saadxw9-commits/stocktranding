@@ -48,6 +48,16 @@ description: كاشف الارتداد اللحظي على SPX بالثواني 
    - ثم يغلق فوق النطاق.
    - مثال ذلك QQQ في 27 نوفمبر.
 
+   **نمط الاستمرار** (`breakdown_retest` للهبوط، و`breakout_retest` للصعود). **فرضية معلنة، معطّلة افتراضيًا** (`level_retest: false`):
+   - إغلاق خلف مستوى ثابت بفارق `level_break_pts` على الأقل.
+   - ابتعاد عنه `level_retest_min_away_pts` على الأقل.
+   - عودة إليه في حدود `level_retest_tol_pts`، بعد `level_retest_min_seconds` وقبل `level_retest_window_seconds`.
+   - شمعة ترفض المستوى: تغلق تحته هابطة (Put)، أو فوقه صاعدة (Call).
+   - الإغلاق خلف المستوى بالاتجاه المعاكس يلغي الكسر. الإغلاق عند المستوى تمامًا لا يلغيه.
+   - مثاله SPX في 27 نوفمبر: كسر 7250 عند 9:33، ثم عاد إليه 9:36، ثم أغلق تحته 9:37.
+
+   **عكس المركز** (`reverse_on_opposite_signal`، فرضية معطّلة افتراضيًا): بعد الهدف الأول والباقي على سعر الدخول، إشارة معاكسة تغلق الباقي وتفتح الاتجاه الجديد. بدونها يمنع مركز Put مفتوح إشارة Call التالية.
+
    الصعود يعني Call، والهبوط يعني Put. لا تتكرر إشارة النمط نفسه قبل `signal_cooldown_seconds`.
 3. **الخروج:**
    - الدخول عند افتتاح الشمعة التالية للإشارة.
@@ -63,10 +73,14 @@ description: كاشف الارتداد اللحظي على SPX بالثواني 
 
    لقياس كل نمط ونوع منطقة: `python3 skills/journal/shadow.py intraday-stats --mode paper`. يجيب هذا التقرير هل ترفع حدود الحركة المتوقعة أو مستويات ملف الحجم جودة الإشارات مقارنة بغيرها، ولا حكم قبل 30 إشارة محسومة في كل مجموعة.
 
+## مستويات خارجية
+
+خطة منشورة أو محلل أو تموضع البائعين (`skills/options-positioning`) تُدمج مناطقَ بـ`--levels-file` (البنية في `fixtures/external-plans/`). تُوسم «خارجي: …» فتُقاس نتائجها منفصلة في `intraday-stats` (نوع المنطقة «مستوى خارجي»). هذا يطبّق القاعدة 7 في `CLAUDE.md`: المصدر الخارجي يُقاس، ولا يكون سبب دخول.
+
 ## التشغيل
 
 ```bash
-python skills/reversal-detector/detector.py <شموع.json> --out reports/signals/<اليوم>.json [--journal --mode replay]
+python skills/reversal-detector/detector.py <شموع.json> --out reports/signals/<اليوم>.json [--journal --mode replay] [--levels-file خطة.json]
 ```
 
 **بنية ملف الإدخال** (انظر `fixtures/`):
