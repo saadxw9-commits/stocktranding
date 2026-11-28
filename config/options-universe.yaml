@@ -22,7 +22,7 @@ defaults:
   # نمط العقود الرخيصة: عقود بعيدة عن السعر، العلاوة كلها هي الإلغاء. يُفعَّل بـ "mode": "cheap" في اللقطة.
   cheap_mode:
     delta_band: [0.05, 0.20]
-    max_premium_usd: 100            # أقصى علاوة للصفقة الواحدة شاملة الرسوم
+    max_premium_usd: null           # ألغى المالك سقف 100$ في 28 نوفمبر 2026. تبقى الميزانية من النقد المتاح وrisk_budget_usd وoptions_max_premium_pct
     min_payoff_multiple: 3          # ربح العقد عند الهدف ÷ علاوته
     max_spread_pct: 15              # فوارق العقود الرخيصة أوسع نسبيًا
     requires_signal: true           # لا دخول إلا بإشارة مؤكدة من reversal-detector

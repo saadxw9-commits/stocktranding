@@ -219,7 +219,7 @@ def compare(data, rules, now, universe=None):
     # علاوة العقد = أقصى خسارة، فحدود الأسهم لا تنطبق. السقف من options_max_premium_pct.
     budget = min(number(data["available_cash_usd"]), number(data["risk_budget_usd"]),
                  capital * number(rules["options_max_premium_pct"]) / 100)
-    if cheap is not None:
+    if cheap is not None and cheap.get("max_premium_usd") is not None:   # null = بلا سقف خاص بالنمط
         budget = min(budget, number(cheap["max_premium_usd"]))
     report.update(budget_usd=budget, exit_at=exit_at.isoformat(), stop_scenario_at=stop_at.isoformat(),
                   valuation=("model_constant_iv" if years else "settlement")
