@@ -1,0 +1,13 @@
+{
+  "_note": "مثال توضيحي ليوم الاثنين 30 نوفمبر 2026. أسعار العقد الآجل والقيمة العادلة هنا افتراضية للاختبار فقط، وليست أسعارًا حقيقية.",
+  "as_of": "2026-11-30T08:45:00-05:00",
+  "index_close": 7297.49,
+  "futures": {"price": 7350.25, "contract": "ESZ6", "expiry": "2026-12-18", "source": "CNBC", "quoted_at": "2026-11-30T08:44:00-05:00"},
+  "published_fair_value": {"points": 10.4, "source": "CNBC", "quoted_at": "2026-11-30T08:30:00-05:00"},
+  "futures_vs_fair_value": {"points": 41.0, "source": "Briefing.com", "quoted_at": "2026-11-30T08:30:00-05:00"},
+  "rate": 0.04,
+  "dividend_yield": 0.012,
+  "iv": 0.1709,
+  "prior_session": {"open": 7262.61, "high": 7304.10, "low": 7211.46, "close": 7297.49},
+  "watch_strikes": [{"strike": 7425, "right": "call", "breakeven": 7428.80}]
+}
