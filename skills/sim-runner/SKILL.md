@@ -16,6 +16,9 @@ python3 skills/sim-runner/sim.py fetch --dataset EQUS.MINI --symbol QQQ --start 
 # ٢) إعادة التشغيل (--scale إلزامي لأي أداة غير SPX وES وSPY وQQQ وXSP)
 python3 skills/sim-runner/sim.py replay data/QQQ.csv --symbol QQQ --filter QQQ --out reports/sim/QQQ
 
+# مستويات خطة خارجية لجلسة يومها فقط (على ES انقل المستويات بفرق القيمة العادلة)
+python3 skills/sim-runner/sim.py replay data/es-1s.csv --symbol ES --levels-file skills/reversal-detector/fixtures/external-plans/2026-11-27-spxsniper.json --levels-shift 12 --out reports/sim/ES-plan
+
 # ٣) التسعير بعقود OPRA الفعلية
 python3 skills/sim-runner/sim.py price-options reports/sim/QQQ --root QQQ --capital 7000 --risk-usd 70 --cache data/cache-QQQ --out reports/sim/QQQ-priced.json
 ```

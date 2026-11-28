@@ -1,0 +1,244 @@
+{
+ "_note": "سلسلة اصطناعية للاختبار فقط، ليست بيانات حقيقية.",
+ "source": "اختبار اصطناعي",
+ "as_of": "2026-11-30T09:15:00-05:00",
+ "expiry": "2026-11-30T16:00:00-05:00",
+ "spot": 7297.49,
+ "multiplier": 100,
+ "chain": [
+  {
+   "strike": 7150,
+   "right": "put",
+   "open_interest": 800,
+   "volume": 266,
+   "iv": 0.1861,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7150,
+   "right": "call",
+   "open_interest": 700,
+   "volume": 233,
+   "iv": 0.1861,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7175,
+   "right": "put",
+   "open_interest": 800,
+   "volume": 266,
+   "iv": 0.1834,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7175,
+   "right": "call",
+   "open_interest": 700,
+   "volume": 233,
+   "iv": 0.1834,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7200,
+   "right": "put",
+   "open_interest": 6000,
+   "volume": 2000,
+   "iv": 0.1806,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7200,
+   "right": "call",
+   "open_interest": 700,
+   "volume": 233,
+   "iv": 0.1806,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7225,
+   "right": "put",
+   "open_interest": 800,
+   "volume": 266,
+   "iv": 0.1779,
+   "volume_at_bid": 200,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7225,
+   "right": "call",
+   "open_interest": 700,
+   "volume": 233,
+   "iv": 0.1779,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7250,
+   "right": "put",
+   "open_interest": 9000,
+   "volume": 3000,
+   "iv": 0.1752,
+   "volume_at_bid": 2250,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7250,
+   "right": "call",
+   "open_interest": 700,
+   "volume": 233,
+   "iv": 0.1752,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7275,
+   "right": "put",
+   "open_interest": 3000,
+   "volume": 1000,
+   "iv": 0.1724,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7275,
+   "right": "call",
+   "open_interest": 700,
+   "volume": 233,
+   "iv": 0.1724,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7300,
+   "right": "put",
+   "open_interest": 800,
+   "volume": 266,
+   "iv": 0.1703,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7300,
+   "right": "call",
+   "open_interest": 700,
+   "volume": 233,
+   "iv": 0.1703,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7325,
+   "right": "put",
+   "open_interest": 800,
+   "volume": 266,
+   "iv": 0.1731,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7325,
+   "right": "call",
+   "open_interest": 2500,
+   "volume": 833,
+   "iv": 0.1731,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7350,
+   "right": "put",
+   "open_interest": 800,
+   "volume": 266,
+   "iv": 0.1758,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7350,
+   "right": "call",
+   "open_interest": 8000,
+   "volume": 2666,
+   "iv": 0.1758,
+   "volume_at_bid": 800,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7375,
+   "right": "put",
+   "open_interest": 800,
+   "volume": 266,
+   "iv": 0.1786,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7375,
+   "right": "call",
+   "open_interest": 700,
+   "volume": 233,
+   "iv": 0.1786,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7400,
+   "right": "put",
+   "open_interest": 800,
+   "volume": 266,
+   "iv": 0.1813,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7400,
+   "right": "call",
+   "open_interest": 5000,
+   "volume": 1666,
+   "iv": 0.1813,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7425,
+   "right": "put",
+   "open_interest": 800,
+   "volume": 266,
+   "iv": 0.184,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7425,
+   "right": "call",
+   "open_interest": 700,
+   "volume": 233,
+   "iv": 0.184,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  },
+  {
+   "strike": 7450,
+   "right": "put",
+   "open_interest": 800,
+   "volume": 266,
+   "iv": 0.1868,
+   "volume_at_bid": 50,
+   "volume_at_ask": 100
+  },
+  {
+   "strike": 7450,
+   "right": "call",
+   "open_interest": 700,
+   "volume": 233,
+   "iv": 0.1868,
+   "volume_at_bid": 40,
+   "volume_at_ask": 150
+  }
+ ]
+}

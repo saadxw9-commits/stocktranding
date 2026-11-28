@@ -113,12 +113,81 @@ class DetectorTest(unittest.TestCase):
     def test_nov27_replay(self):
         data = json.loads((SKILL / "fixtures" / "spx-2026-11-27-approx.json").read_text(encoding="utf-8"))
         r = run(data)
-        sig = next(e for e in r["events"] if e["type"] == "signal")
-        entry = next(e for e in r["events"] if e["type"] == "entry")
+        sig = next(e for e in r["events"] if e["type"] == "signal" and e["side"] == "call")
+        entry = next(e for e in r["events"] if e["type"] == "entry" and e["side"] == "call")
         self.assertEqual(sig["at"].strftime("%H:%M"), "10:06")
         self.assertEqual(sig["extreme"], 7211.46)
         self.assertEqual(entry["at"].strftime("%H:%M"), "10:07")
         self.assertEqual(entry["stop"], 7210.46)
+
+
+class DefaultsUnchanged(unittest.TestCase):
+    def test_hypotheses_off_by_default(self):
+        data = json.loads((SKILL / "fixtures" / "spx-2026-11-27-approx.json").read_text(encoding="utf-8"))
+        pats = {e["pattern"] for e in run(data)["events"] if e["type"] == "signal"}
+        self.assertNotIn("breakdown_retest", pats)
+
+
+class Nov27BothSides(unittest.TestCase):
+    """27 نوفمبر: كسر 7250 ثم فشل استعادته (Put)، ثم ارتداد من القاع 7211 (Call). بيانات تقريبية."""
+
+    def setUp(self):
+        self.data = json.loads((SKILL / "fixtures" / "spx-2026-11-27-approx.json").read_text(encoding="utf-8"))
+        self.plan = json.loads((SKILL / "fixtures" / "external-plans" / "2026-11-27-spxsniper.json")
+                               .read_text(encoding="utf-8"))
+        self.data["config"] = {"level_retest": True, "reverse_on_opposite_signal": True}   # الفرضيتان المعلنتان مفعّلتان صراحةً
+
+    def test_put_then_reverse_to_call(self):
+        ev = run(self.data)["events"]
+        sig = [e for e in ev if e["type"] == "signal"]
+        self.assertEqual([(e["side"], e["pattern"], e["at"].strftime("%H:%M")) for e in sig[:2]],
+                         [("put", "breakdown_retest", "09:37"), ("call", "failed_breakdown", "10:06")])
+        put_entry = next(e for e in ev if e["type"] == "entry" and e["side"] == "put")
+        self.assertEqual((put_entry["entry"], put_entry["stop"]), (7247.75, 7251.5))
+        rev = next(e for e in ev if e["type"] == "exit" and e["reason"] == "reverse")
+        self.assertEqual(rev["at"].strftime("%H:%M"), "10:06")
+        closed = [e for e in ev if e["type"] == "trade_closed"]
+        self.assertEqual([c["side"] for c in closed], ["put", "call"])
+        self.assertTrue(all(c["result_r"] > 0 for c in closed))
+
+    def test_external_plan_levels_are_tagged(self):
+        from detector import add_external_levels
+        sys.path.insert(0, str(SKILL.parents[0] / "journal"))
+        from shadow import zone_kind
+        ev = run(add_external_levels(self.data, self.plan))["events"]
+        put = next(e for e in ev if e["type"] == "entry" and e["side"] == "put")
+        self.assertTrue(put["zone"].startswith("خارجي"))
+        self.assertEqual(zone_kind(put["zone"]), "مستوى خارجي")
+        self.assertEqual(put["t1"], 7240.0)
+
+    def test_no_reverse_when_disabled(self):
+        self.data["config"] = {"level_retest": True, "reverse_on_opposite_signal": False}
+        ev = run(self.data)["events"]
+        self.assertFalse(any(e["type"] == "exit" and e["reason"] == "reverse" for e in ev))
+
+
+class LevelRetest(unittest.TestCase):
+    """نمط الاستمرار بالاتجاهين على مستوى خارجي 5010."""
+
+    def run_rows(self, rows):
+        return run(ctx(bars_from(rows, step=60), levels={"custom": [{"price": 5010, "name": "اختبار"}]},
+                       reference_price=None, config={"level_retest": True}))["events"]
+
+    def test_breakout_retest_call(self):
+        rows = [(5008, 5009, 5007, 5008, 100)] * 4 + [(5008, 5013, 5008, 5012, 100)]   # كسر لأعلى
+        rows += [(5012, 5016, 5012, 5015, 100), (5015, 5016, 5013, 5014, 100)]          # ابتعاد
+        rows += [(5014, 5014, 5010.5, 5013.5, 100)]  # ستة: هبوط إلى المستوى… ثم شمعة صاعدة
+        rows += [(5011, 5014, 5010.5, 5013.8, 100)]
+        rows += [(5014 + i, 5015 + i, 5013.5 + i, 5015 + i, 100) for i in range(40)]
+        sig = [e for e in self.run_rows(rows) if e["type"] == "signal"]
+        self.assertEqual((sig[0]["side"], sig[0]["pattern"]), ("call", "breakout_retest"))
+
+    def test_reclaim_cancels_breakdown(self):
+        rows = [(5011, 5012, 5010.5, 5011, 100)] * 4 + [(5011, 5011, 5006, 5007, 100)]  # كسر لأسفل
+        rows += [(5007, 5008, 5005, 5006, 100), (5006, 5012, 5006, 5011.5, 100)]          # استعادة بالإغلاق
+        rows += [(5011.5, 5011.8, 5008, 5009, 100)] * 3
+        sig = [e for e in self.run_rows(rows) if e["type"] == "signal" and e["pattern"] == "breakdown_retest"]
+        self.assertEqual(sig, [])
 
 
 if __name__ == "__main__":

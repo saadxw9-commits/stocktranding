@@ -83,6 +83,12 @@ python skills/premarket-gap-brief/gap_brief.py skills/premarket-gap-brief/fixtur
 python skills/spx-premarket-brief/premarket.py skills/spx-premarket-brief/fixtures/example.json
 ```
 
+[تموضع البائعين](skills/options-positioning/SKILL.md) يقرأ أين تُباع عقود Put وCall (الجدران وصافي البيع والألم الأقصى وجاما) ليعطي ميل اتجاه الشراء ومستويات لكاشف الارتداد. تحليل فقط، والمنظومة لا تبيع عقودًا:
+
+```bash
+python skills/options-positioning/positioning.py skills/options-positioning/fixtures/synthetic-spxw-2026-11-30.json
+```
+
 ## من الاقتراح إلى العقد
 
 [الجسر](skills/option-bridge/SKILL.md) يأخذ حكم طبقة التحقق ويختار عقد الخيارات عبر عدة تواريخ انتهاء (مثال اصطناعي):
