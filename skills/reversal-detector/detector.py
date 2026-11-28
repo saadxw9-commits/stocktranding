@@ -344,6 +344,10 @@ class Detector:
     def _open(self, bar):
         p, self.pending = self.pending, None
         side, sign = p["side"], (1 if p["side"] == "call" else -1)
+        if bar["t"] >= self.close_at - timedelta(seconds=self.cfg["flat_before_close_seconds"]):
+            # لا دخول بعد وقت الخروج الإجباري قبل الإغلاق: كان يُفتح ثم يُغلق فورًا بخسارة
+            self._emit("skip", bar["t"], side=side, reason="after_flat_cutoff")
+            return
         entry = bar["o"]
         stop = round(p["extreme"] - sign * self.cfg["stop_buffer_pts"], 2)
         risk = sign * (entry - stop)

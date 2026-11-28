@@ -166,6 +166,16 @@ class Nov27BothSides(unittest.TestCase):
         self.assertFalse(any(e["type"] == "exit" and e["reason"] == "reverse" for e in ev))
 
 
+class FlatCutoff(unittest.TestCase):
+    def test_no_entry_after_flat_cutoff(self):
+        # إشارة قرب الإغلاق: الدخول بعد (الإغلاق − 15 دقيقة) يُتخطّى ولا يُفتح مركز
+        rows = FLAT + SWEEP_UP + RALLY[:5]
+        c = ctx(bars_from(rows), session_close=(T0 + timedelta(minutes=10)).isoformat())
+        ev = run(c)["events"]
+        self.assertFalse(any(e["type"] == "entry" for e in ev))
+        self.assertTrue(any(e["type"] == "skip" and e.get("reason") == "after_flat_cutoff" for e in ev))
+
+
 class LevelRetest(unittest.TestCase):
     """نمط الاستمرار بالاتجاهين على مستوى خارجي 5010."""
 
