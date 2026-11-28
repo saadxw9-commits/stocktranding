@@ -83,6 +83,69 @@ def option_delta(spot, strike, side, years, iv, rate, dividend):
     return math.exp(-dividend * years) * (n(d1) if side == "call" else n(d1) - 1)
 
 
+def finish_probability(spot, level, side, years, iv, rate, dividend):
+    """احتمال أن يغلق الأصل عند الانتهاء فوق المستوى (Call) أو دونه (Put). نموذج لوغاريتمي طبيعي بتذبذب ثابت."""
+    if years <= 0 or iv <= 0:
+        return float(spot > level) if side == "call" else float(spot < level)
+    vol = iv * math.sqrt(years)
+    d2 = (math.log(spot / level) + (rate - dividend - iv**2 / 2) * years) / vol
+    n = NormalDist().cdf
+    return n(d2) if side == "call" else n(-d2)
+
+
+def touch_probability(spot, level, side, years, iv, rate, dividend):
+    """احتمال أن يلمس الأصل المستوى مرة واحدة على الأقل قبل الانتهاء (المرور الأول لحركة براونية هندسية)."""
+    up = side == "call"
+    if (up and spot >= level) or (not up and spot <= level):
+        return 1.0
+    if years <= 0 or iv <= 0:
+        return 0.0
+    mu = rate - dividend - iv**2 / 2
+    b = math.log(level / spot)
+    s = iv * math.sqrt(years)
+    n = NormalDist().cdf
+    sign = 1 if up else -1
+    prob = n(sign * (mu * years - b) / s) + math.exp(2 * mu * b / iv**2) * n(sign * (-b - mu * years) / s)
+    return min(max(prob, 0.0), 1.0)
+
+
+def effective_years(mid, spot, strike, side, years, iv, rate, dividend):
+    """الزمن الفعّال الذي يجعل سعر النموذج يساوي سعر السوق عند التذبذب المعروض.
+    عطلة نهاية الأسبوع لا تحمل تذبذب أيام التداول، فالزمن التقويمي يبالغ في الاحتمالات.
+    يعيد (الزمن، المصدر): "market_calibrated" أو "calendar" إن تعذّرت المعايرة."""
+    intrinsic = max((spot - strike) if side == "call" else (strike - spot), 0)
+    if years <= 0 or iv <= 0 or mid <= intrinsic:
+        return years, "calendar"
+    if option_value(spot, strike, side, years, iv, rate, dividend) < mid:
+        return years, "calendar"
+    lo, hi = 0.0, years
+    for _ in range(60):
+        m = (lo + hi) / 2
+        if option_value(spot, strike, side, m, iv, rate, dividend) < mid:
+            lo = m
+        else:
+            hi = m
+    return (lo + hi) / 2, "market_calibrated"
+
+
+def session_context(prior, spot, iv, multiplier_note=None):
+    """مستويات الجلسة السابقة والحركة المتوقعة ليوم واحد وتحذير الأحجام الضعيفة."""
+    out = {}
+    for k in ("open", "high", "low", "close"):
+        if prior.get(k) is not None:
+            out[k] = number(prior[k], 0.000001)
+    if "high" in out and "low" in out and out["high"] > out["low"]:
+        out["range_pts"] = round(out["high"] - out["low"], 2)
+        if "close" in out:
+            out["close_location_pct"] = round((out["close"] - out["low"]) / out["range_pts"] * 100, 1)
+    if iv:
+        out["expected_move_1d_pts"] = round(spot * iv * math.sqrt(1 / 252), 2)
+    vol, avg = prior.get("volume"), prior.get("avg_volume")
+    if vol is not None and avg:
+        out["volume_vs_avg"] = round(number(vol) / number(avg, 0.000001), 3)
+    return out
+
+
 def compare(data, rules, now, universe=None):
     universe = universe or load_universe()
     name = data.get("underlying") or data["series"]
@@ -225,10 +288,22 @@ def compare(data, rules, now, universe=None):
         elif ratio is None or ratio < rules["min_reward_risk"]:
             reasons.append("scenario_reward_risk")
         band = "otm" if abs(delta) < 0.42 else "atm" if abs(delta) <= 0.58 else "itm"
+        breakeven = strike + (1 if side == "call" else -1) * cost / mult
+        # احتمالات نموذجية للعرض فقط، لا تدخل البوابات. من وقت اللقطة حتى التسوية.
+        t_eff, t_src = effective_years((bid + ask) / 2, spot, strike, side, years_now, iv, rate, dividend)
+        probs = dict(
+            finish_itm=round(finish_probability(spot, strike, side, t_eff, iv, rate, dividend), 4),
+            finish_above_breakeven=round(finish_probability(spot, breakeven, side, t_eff, iv, rate, dividend), 4),
+            touch_strike=round(touch_probability(spot, strike, side, t_eff, iv, rate, dividend), 4),
+            touch_target=round(touch_probability(spot, target, side, t_eff, iv, rate, dividend), 4),
+            effective_days=round(t_eff * 365, 2), time_basis=t_src, basis="model_constant_iv")
+        one_day = spot * iv * math.sqrt(1 / 252)
+        required_sigma = round(abs(breakeven - spot) / one_day, 2) if one_day else None
         report["contracts"].append(dict(strike=strike, right=side, ask=ask, bid=bid,
             quoted_at=q["quoted_at"], delta=delta, delta_source=delta_src, moneyness=band, iv=q.get("iv"),
             open_interest=oi, volume=vol,
-            max_loss_usd=cost, breakeven=round(strike + (1 if side == "call" else -1) * cost / mult, 4),
+            max_loss_usd=cost, breakeven=round(breakeven, 4),
+            probabilities=probs, required_move_1d_sigma=required_sigma,
             pnl_usd=pnl, reward_risk=ratio, payoff_multiple=payoff, spread_pct=round(spread, 3), rejected=reasons))
     if strikes:
         atm = min(strikes, key=lambda k: (abs(k - spot), k))
@@ -237,6 +312,17 @@ def compare(data, rules, now, universe=None):
             debit = pair["call"] + pair["put"]
             report["atm_straddle"] = dict(strike=atm, ask_points=round(debit, 4),
                 settlement_breakevens=[round(atm - debit, 4), round(atm + debit, 4)])
+    prior = data.get("prior_session")
+    if prior:
+        atm_iv = None
+        priced = [q for q in data["quotes"] if q.get("right") == side and q.get("iv")]
+        if priced:
+            atm_iv = min(priced, key=lambda q: abs(q["strike"] - spot))["iv"]
+        ctx = session_context(prior, spot, atm_iv)
+        report["prior_session"] = ctx
+        ratio_v = ctx.get("volume_vs_avg")
+        if ratio_v is not None and ratio_v < u.get("low_volume_ratio", 0.5):
+            report["warnings"].append("low_volume_prior_session")
     valid = [q for q in report["contracts"] if q.get("rejected") == []]
     if not valid:
         return dict(report, reason="no_eligible_contract")

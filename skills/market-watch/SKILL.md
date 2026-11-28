@@ -12,6 +12,7 @@ description: راصد السوق الأمريكي. يصدر تقريرًا عر�
 3. الأحداث: `equity-research:catalyst-calendar` و`economic-calendar-fetcher` و`earnings-calendar` لهذا الأسبوع.
 4. الأخبار المؤثرة: `market-news-analyst`.
 5. نسبة الانكشاف المقترحة: `exposure-coach`.
+6. **افتتاح SPX المتوقع:** سعر العقد الآجل ES ناقص القيمة العادلة عبر `skills/option-selector/fair_value.py`. قارنه بقمة الجلسة السابقة وقاعها وافتتاحها، فهي مستويات الافتتاح لعقود SPX وXSP.
 
 ## بعد الإغلاق
 
