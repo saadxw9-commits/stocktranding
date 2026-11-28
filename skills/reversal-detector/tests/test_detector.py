@@ -123,3 +123,14 @@ class DetectorTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OptionSide(unittest.TestCase):
+    def test_put_signal_not_priced_with_call_contract(self):
+        from detector import OptionMap, DEFAULTS
+        spec = dict(strike=7250, right="call", expiry="2026-12-01T16:00:00-05:00", iv=0.2)
+        om = OptionMap(spec, DEFAULTS)
+        at = datetime(2026, 12, 1, 10, 0, tzinfo=ET)
+        self.assertIsNotNone(om.price(7240, at, "call"))
+        self.assertIsNone(om.price(7240, at, "put"))
+        self.assertIsNotNone(om.price(7240, at))

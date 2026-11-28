@@ -110,8 +110,9 @@ class OptionMap:
                 lo = mid
         return round((lo + hi) / 2, 5)
 
-    def price(self, spot, at):
-        if not self.spec:
+    def price(self, spot, at, side=None):
+        """side: اتجاه الإشارة. العقد المرتبط Call أو Put واحد، فإشارة الاتجاه المعاكس لا تُسعَّر به."""
+        if not self.spec or (side and side != self.right):
             return None
         return round(self._value(spot, at, self.iv), 2)
 
@@ -227,7 +228,7 @@ class Detector:
             self.alerted.add(key)
             self.last_alert[side] = bar["t"]
             self._emit("zone", bar["t"], side=side, level=z[0], zone=z[1],
-                       option_est=self.option.price(z[0], bar["t"]))
+                       option_est=self.option.price(z[0], bar["t"], side))
 
     # ---------- الطبقة ٢: الإشارة ----------
     def _window(self, i):
@@ -343,8 +344,8 @@ class Detector:
         info = dict(side=side, entry=entry, stop=stop, risk_pts=round(risk, 2),
                     t1=t1, t1_zone=n1, t2=t2, t2_zone=n2, planned_r=round(planned, 2),
                     deadline=deadline, zone=p["zone"], pattern=p["pattern"],
-                    option_entry_est=self.option.price(entry, bar["t"]),
-                    option_stop_est=self.option.price(stop, bar["t"]))
+                    option_entry_est=self.option.price(entry, bar["t"], side),
+                    option_stop_est=self.option.price(stop, bar["t"], side))
         if planned < self.cfg["min_reward_risk"]:
             self._emit("skip", bar["t"], reason="reward_risk", **info)
             return
@@ -353,10 +354,10 @@ class Detector:
 
     def _fill(self, t, price, qty, why):
         pos = self.position
-        pos["fills"].append(dict(at=t, price=price, qty=qty, reason=why,
-                                 option_est=self.option.price(price, t)))
+        est = self.option.price(price, t, pos["side"])
+        pos["fills"].append(dict(at=t, price=price, qty=qty, reason=why, option_est=est))
         pos["remaining"] = round(pos["remaining"] - qty, 6)
-        self._emit("exit", t, price=price, qty=qty, reason=why, option_est=self.option.price(price, t))
+        self._emit("exit", t, price=price, qty=qty, reason=why, option_est=est)
         if pos["remaining"] <= 1e-9:
             self._close()
 
