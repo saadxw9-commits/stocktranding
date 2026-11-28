@@ -150,10 +150,24 @@ class UniverseTest(unittest.TestCase):
         d["signal"] = {"pattern": "higher_low", "at": "2026-11-27T10:06:00-05:00"}
         r = self.run_case(d)
         self.assertEqual(r["decision"], "CANDIDATE")
-        self.assertEqual(r["budget_usd"], 100)
+        self.assertEqual(r["budget_usd"], 5000)   # بلا سقف 100$ (قرار المالك 28 نوفمبر): الميزانية العامة
         self.assertGreaterEqual(r["contracts"][0]["payoff_multiple"], 3)
         d["target"] = 646
         self.assertIn("cheap_payoff", self.run_case(d)["contracts"][0]["rejected"])
+
+    def test_cheap_mode_premium_cap(self):
+        # عقد بعلاوة 390$ في النمط الرخيص: يمر بلا سقف، ويُرفض إن أعاد المالك سقفًا 100$
+        d = self.etf(spot=639, target=650, invalidation=636.5, exit_at="2026-11-27T12:50:00-05:00", mode="cheap",
+                     signal={"pattern": "failed_breakdown", "at": "2026-11-27T10:06:00-05:00"})
+        d["quotes"] = [dict(strike=645, right="call", bid=3.8, ask=3.9, iv=1.6, open_interest=4290,
+                            volume=20000, quoted_at=d["as_of"])]
+        c = self.run_case(d)["contracts"][0]
+        self.assertNotIn("over_budget", c["rejected"])
+        uni = load_universe()
+        uni["defaults"]["cheap_mode"]["max_premium_usd"] = 100
+        capped = compare(d, self.rules, self.now, uni)
+        self.assertEqual(capped["budget_usd"], 100)
+        self.assertIn("over_budget", capped["contracts"][0]["rejected"])
 
     def test_spread_by_horizon(self):
         # عقد EWZ يناير 35 بعد إغلاق 27 نوفمبر: فارق 12% يُرفض خلال اليوم ويُقبل لصفقة أسابيع
