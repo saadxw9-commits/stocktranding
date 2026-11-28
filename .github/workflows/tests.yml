@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: pip install pyyaml
+      - run: pip install pyyaml pandas
       - name: تشغيل الاختبارات
         shell: bash
         run: for t in skills/*/tests; do echo "== $t"; python -m unittest discover -s "$t" -q || exit 1; done
